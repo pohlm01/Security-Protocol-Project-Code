@@ -1,0 +1,3 @@
+[submodule "card/GlobalPlatformPro"]
+	path = card/GlobalPlatformPro
+	url = git@github.com:martinpaljak/GlobalPlatformPro.git
