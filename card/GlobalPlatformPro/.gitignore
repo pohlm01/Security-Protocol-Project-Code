@@ -1,0 +1,8 @@
+*.iml
+*~
+.mvn/wrapper/maven-wrapper.jar
+/.idea
+/javadoc
+/target
+pom.xml.versionsBackup
+target

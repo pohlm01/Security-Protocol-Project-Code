@@ -1,7 +1,7 @@
 
 Build tool for smart card interaction
 ```shell
-cd GlobalPlatformPro/tool/
+cd GlobalPlatformPro/
 ./mvnw package
 ```
 
