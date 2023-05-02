@@ -4,18 +4,18 @@
     <groupId>nl.ru.sec_protocol.group5</groupId>
     <artifactId>card</artifactId>
     <version>1.0-SNAPSHOT</version>
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>default</id>-->
-<!--            <properties>-->
-<!--                <sourcedirectory>src/main/java</sourcedirectory>-->
-<!--                <javacard.applet.name>CardApplet</javacard.applet.name>-->
-<!--            </properties>-->
-<!--            <activation>-->
-<!--                <activeByDefault>true</activeByDefault>-->
-<!--            </activation>-->
-<!--        </profile>-->
-<!--    </profiles>-->
+    <!--    <profiles>-->
+    <!--        <profile>-->
+    <!--            <id>default</id>-->
+    <!--            <properties>-->
+    <!--                <sourcedirectory>src/main/java</sourcedirectory>-->
+    <!--                <javacard.applet.name>CardApplet</javacard.applet.name>-->
+    <!--            </properties>-->
+    <!--            <activation>-->
+    <!--                <activeByDefault>true</activeByDefault>-->
+    <!--            </activation>-->
+    <!--        </profile>-->
+    <!--    </profiles>-->
     <dependencies>
         <dependency>
             <groupId>javacard</groupId>
@@ -25,10 +25,104 @@
             <systemPath>${project.basedir}/sdk/lib/api.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>apduio</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/apduio.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>apdutool</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/apdutool.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>capdump</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/capdump.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>converter</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/converter.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>installer</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/installer.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>javacardframework</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/javacardframework.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>jcclientsamples</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/jcclientsamples.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>jcrmiclientframework</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/jcrmiclientframework.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>jcwde</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/jcwde.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>offcardverifier</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/offcardverifier.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javacard</groupId>
+            <artifactId>scriptgen</artifactId>
+            <version>2.2.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/sdk/lib/scriptgen.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>com.github.martinpaljak</groupId>
             <artifactId>globalplatformpro</artifactId>
             <version>19.06.16</version>
         </dependency>
+        <dependency>
+            <groupId>com.licel</groupId>
+            <artifactId>jcardsim</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.klinec</groupId>-->
+        <!--            <artifactId>jcardsim</artifactId>-->
+        <!--            <version>3.0.4</version>-->
+        <!--        </dependency>-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -39,6 +133,19 @@
                     <source>1.2</source>
                     <target>1.2</target>
                 </configuration>
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>test-compile</id>-->
+<!--                        <phase>process-test-sources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>testCompile</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <source>1.2</source>-->
+<!--                            <target>1.2</target>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -53,7 +160,6 @@
                         </goals>
                         <configuration>
                             <executable>delete_from_card.sh</executable>
-                            <workingDirectory>..</workingDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -64,7 +170,6 @@
                         </goals>
                         <configuration>
                             <executable>upload_to_card.sh</executable>
-                            <workingDirectory>..</workingDirectory>
                         </configuration>
                     </execution>
                 </executions>
