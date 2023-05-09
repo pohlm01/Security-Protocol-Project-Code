@@ -33,6 +33,7 @@ public class PosCard extends Applet implements ISO7816 {
     private byte state;
 
     PosCard() {
+        card_id = new byte[4];
         register();
     }
 
@@ -50,15 +51,15 @@ public class PosCard extends Applet implements ISO7816 {
 
         switch (instruction) {
             case (byte) 0x02:
-//                ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-                initialize(apdu);
+                generate_keys(apdu);
                 break;
             case (byte) 0x04:
-//                ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
-                buy(apdu);
+                set_card_id_and_expiration_date(apdu);
                 break;
             case (byte) 0x06:
-//                ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
+                buy(apdu);
+                break;
+            case (byte) 0x08:
                 reload(apdu);
                 break;
             default:
@@ -66,41 +67,29 @@ public class PosCard extends Applet implements ISO7816 {
         }
     }
 
-    private void initialize(APDU apdu) {
+    private void set_card_id_and_expiration_date(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-//        // Step 4
-//        pub_key_backend = (ECPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_EC_F2M_PUBLIC, EC_KEY_LENGTH, false);
-//        // We use OFFSET_CDATA + 1 as start because the first byte is for the sign only (and therefore 0x00).
-//        // TODO make sure the buffer contains data in the ANSI X9.62 format and make sure the length is correct
-//        pub_key_backend.setW(buffer, (short) (OFFSET_CDATA + 1), (short) (EC_KEY_LENGTH / 8));
-//
-//        Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 1 + (EC_KEY_LENGTH / 8)), card_id, (short) 0, (short) 4);
-//
-//        Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 1 + (EC_KEY_LENGTH / 8) + 4), card_id, (short) 0, (short) 3);
-//
+        // Step 4
+        Util.arrayCopy(buffer, OFFSET_CDATA, card_id, (short) 0, (short) 4);
+        Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 4), expiration_date, (short) 4, (short) 3);
+    }
+
+    private void generate_keys(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        // Step 4
+        pub_key_backend = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
+        pub_key_backend.setModulus(buffer, OFFSET_CDATA, (short) (KeyBuilder.LENGTH_RSA_2048/8));
 
         // Step 5
-//        KeyPair keyPair = new KeyPair(KeyPair.ALG_EC_F2M, EC_KEY_LENGTH);
         KeyPair keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_2048);
         keyPair.genKeyPair();
         priv_key_card = (RSAPrivateKey) keyPair.getPrivate();
         pub_key_card = (RSAPublicKey) keyPair.getPublic();
-//
-//        balance = 0;
-//
-//        // Step 6
-//        short le = apdu.setOutgoing();
-//        if (le < EC_KEY_LENGTH) {
-//            ISOException.throwIt((short) (SW_WRONG_LENGTH | EC_KEY_LENGTH));
-//        }
 
-//        short len_return_apdu = pub_key_card.getW(buffer, (short) 0);
-//        apdu.setOutgoingLength(len_return_apdu);
-//        apdu.sendBytes((short) 0, (short) len_return_apdu);
-//        byte[] testArray = new byte[]{1,2,3};
+        balance = 0;
+
+        // Step 6
         pub_key_card.getModulus(buffer, (short) 0);
-//        apdu.setOutgoing();
-//        apdu.sendBytes((short) 0, (short) 3);
         apdu.setOutgoingAndSend((short) 0, (short) (KeyBuilder.LENGTH_RSA_2048/8));
     }
 
