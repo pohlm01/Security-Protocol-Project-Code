@@ -18,7 +18,7 @@ public class InitTerminal extends Terminal {
 
     static {
         try {
-            backendPrivKey = Utils.readPrivateKey(new File("private.pem"));
+            backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
         } catch (Exception e) {
             System.exit(1);
         }

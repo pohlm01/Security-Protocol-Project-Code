@@ -21,7 +21,7 @@ public abstract class Terminal {
 
     static {
         try {
-            backendPubKey = Utils.readPublicKey(new File("public.pem"));
+            backendPubKey = Utils.readPublicKey(new File("backend_public.pem"));
         } catch (Exception e) {
             System.exit(1);
         }
