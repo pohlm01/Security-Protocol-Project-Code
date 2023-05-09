@@ -4,6 +4,7 @@ import javax.smartcardio.*;
 
 import jnasmartcardio.Smartcardio;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.*;
@@ -17,8 +18,25 @@ public class Terminal {
 
     private final Card card;
 
-    private RSAPrivateKey backendPrivKey; // TODO this should live longer than the program, e.g., in a file
-    private RSAPublicKey backendPubKey; // TODO this should live longer than the program, e.g., in a file
+    private static RSAPrivateKey backendPrivKey;
+
+    static {
+        try {
+            backendPrivKey = Utils.readPrivateKey(new File("private.pem"));
+        } catch (Exception e) {
+            System.exit(1);
+        }
+    }
+
+    private static RSAPublicKey backendPubKey;
+
+    static {
+        try {
+            backendPubKey = Utils.readPublicKey(new File("public.pem"));
+        } catch (Exception e) {
+            System.exit(1);
+        }
+    }
 
     public static final BigInteger pubExponent = new BigInteger("65537");
     private static final byte[] aid = new byte[]{0x2D, 0x54, 0x45, 0x53, 0x54, 0x70};
@@ -86,14 +104,14 @@ public class Terminal {
      * @return Public key generated on the card
      **/
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
-        var keyGenerator = KeyPairGenerator.getInstance("RSA");
-
-        keyGenerator.initialize(2048);
-        var keyPair = keyGenerator.generateKeyPair();
-
-        backendPrivKey = (RSAPrivateKey) keyPair.getPrivate();
-
-        backendPubKey = (RSAPublicKey) keyPair.getPublic();
+//        var keyGenerator = KeyPairGenerator.getInstance("RSA");
+//
+//        keyGenerator.initialize(2048);
+//        var keyPair = keyGenerator.generateKeyPair();
+//
+//        backendPrivKey = (RSAPrivateKey) keyPair.getPrivate();
+//
+//        backendPubKey = (RSAPublicKey) keyPair.getPublic();
         var pubModulus = backendPubKey.getModulus().toByteArray();
 
         // make sure we get rid of the byte indicating the sign by cutting of the first byte
