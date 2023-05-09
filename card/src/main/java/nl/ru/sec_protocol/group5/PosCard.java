@@ -34,6 +34,8 @@ public class PosCard extends Applet implements ISO7816 {
 
     PosCard() {
         card_id = new byte[4];
+        expiration_date = new byte[3];
+        signature = new byte[2048 / 8];
         register();
     }
 
@@ -51,15 +53,18 @@ public class PosCard extends Applet implements ISO7816 {
 
         switch (instruction) {
             case (byte) 0x02:
-                generate_keys(apdu);
+                generateKeys(apdu);
                 break;
             case (byte) 0x04:
-                set_card_id_and_expiration_date(apdu);
+                setCardIdAndExpirationDate(apdu);
                 break;
             case (byte) 0x06:
-                buy(apdu);
+                signCard(apdu);
                 break;
             case (byte) 0x08:
+                buy(apdu);
+                break;
+            case (byte) 0x0A:
                 reload(apdu);
                 break;
             default:
@@ -67,18 +72,25 @@ public class PosCard extends Applet implements ISO7816 {
         }
     }
 
-    private void set_card_id_and_expiration_date(APDU apdu) {
+    private void signCard(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        // Step 4
-        Util.arrayCopy(buffer, OFFSET_CDATA, card_id, (short) 0, (short) 4);
-        Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 4), expiration_date, (short) 4, (short) 3);
+        signature[0] = buffer[OFFSET_P1];
+        Util.arrayCopy(buffer, OFFSET_CDATA, signature, (short) 1, (short) (255));
+        initialized = true;
     }
 
-    private void generate_keys(APDU apdu) {
+    private void setCardIdAndExpirationDate(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+
+        Util.arrayCopy(buffer, OFFSET_CDATA, card_id, (short) 0, (short) 4);
+        Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 4), expiration_date, (short) 0, (short) 3);
+    }
+
+    private void generateKeys(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         // Step 4
         pub_key_backend = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
-        pub_key_backend.setModulus(buffer, OFFSET_CDATA, (short) (KeyBuilder.LENGTH_RSA_2048/8));
+        pub_key_backend.setModulus(buffer, OFFSET_CDATA, (short) (KeyBuilder.LENGTH_RSA_2048 / 8));
 
         // Step 5
         KeyPair keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_2048);
@@ -90,7 +102,7 @@ public class PosCard extends Applet implements ISO7816 {
 
         // Step 6
         pub_key_card.getModulus(buffer, (short) 0);
-        apdu.setOutgoingAndSend((short) 0, (short) (KeyBuilder.LENGTH_RSA_2048/8));
+        apdu.setOutgoingAndSend((short) 0, (short) (KeyBuilder.LENGTH_RSA_2048 / 8));
     }
 
     private void buy(APDU apdu) {
