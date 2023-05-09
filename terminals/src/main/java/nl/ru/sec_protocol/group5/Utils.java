@@ -6,6 +6,7 @@ import org.bouncycastle.util.io.pem.PemReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
@@ -13,6 +14,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.LocalDate;
 
 public class Utils {
     public static RSAPublicKey readPublicKey(File file) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
@@ -39,5 +41,19 @@ public class Utils {
             PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
             return (RSAPrivateKey) factory.generatePrivate(privKeySpec);
         }
+    }
+
+    public static byte[] dateToBytes(LocalDate date) {
+        byte day = (byte) date.getDayOfMonth();
+        byte month = (byte) date.getMonth().getValue();
+        byte year = (byte) (date.getYear() - 2000);
+
+        return new byte[]{day, month, year};
+    }
+
+    public static byte[] intToBytes(int i) {
+        ByteBuffer bb = ByteBuffer.allocate(4);
+        bb.putInt(i);
+        return bb.array();
     }
 }

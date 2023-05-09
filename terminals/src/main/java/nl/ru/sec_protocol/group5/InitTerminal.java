@@ -1,12 +1,10 @@
 package nl.ru.sec_protocol.group5;
 
-import javax.smartcardio.*;
-
-import jnasmartcardio.Smartcardio;
-
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardException;
+import javax.smartcardio.CommandAPDU;
 import java.io.File;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -14,9 +12,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.LocalDate;
 
-public class Terminal {
-
-    private final Card card;
+public class InitTerminal extends Terminal {
 
     private static RSAPrivateKey backendPrivKey;
 
@@ -27,55 +23,17 @@ public class Terminal {
             System.exit(1);
         }
     }
-
-    private static RSAPublicKey backendPubKey;
-
-    static {
-        try {
-            backendPubKey = Utils.readPublicKey(new File("public.pem"));
-        } catch (Exception e) {
-            System.exit(1);
-        }
-    }
-
-    public static final BigInteger pubExponent = new BigInteger("65537");
-    private static final byte[] aid = new byte[]{0x2D, 0x54, 0x45, 0x53, 0x54, 0x70};
-
-    private static final CommandAPDU select_aid = new CommandAPDU((byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, aid);
-
-    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        Security.addProvider(new Smartcardio());
-        CardTerminals terminals = TerminalFactory.getInstance("PC/SC", null, Smartcardio.PROVIDER_NAME).terminals();
-
-        java.util.List<CardTerminal> terminal_list = terminals.list();
-        CardTerminal terminal = terminal_list.get(0);
-        Card card = terminal.connect("*");
-
-        Terminal t = new Terminal(card);
-        t.initializeCard(12345, LocalDate.of(2030, 1, 31));
-    }
-
-    Terminal(Card card) {
-        this.card = card;
-    }
-
-    public void initializeCard(int cardId, LocalDate expirationDate) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        var channel = card.getBasicChannel();
-
-        select_applet(channel);
-
-        var pubKeyCard = generateKeyMaterial(channel);
-        sendCardIdAndExpirationDate(channel, cardId, expirationDate);
-
-        signCard(channel, backendPrivKey, pubKeyCard, cardId, expirationDate);
+    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        InitTerminal initTerminal = new InitTerminal();
+        initTerminal.start();
     }
 
     private void signCard(CardChannel channel, RSAPrivateKey backendPrivKey, RSAPublicKey cardPublicKey, int cardId, LocalDate expirationDate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // cardId || expirationDate || K_c || 0x01
         var data = new byte[4 + 3 + (2048 / 8) + 1]; // TODO introduce constants for all these values
 
-        System.arraycopy(intToBytes(cardId), 0, data, 0, 4);
-        System.arraycopy(dateToBytes(expirationDate), 0, data, 4, 3);
+        System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, 4);
+        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, 4, 3);
         System.arraycopy(cardPublicKey.getModulus().toByteArray(), 0, data, 3 + 4, 2048 / 8);
         data[4 + 3 + (2048 / 8)] = 0x01;
 
@@ -104,14 +62,6 @@ public class Terminal {
      * @return Public key generated on the card
      **/
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
-//        var keyGenerator = KeyPairGenerator.getInstance("RSA");
-//
-//        keyGenerator.initialize(2048);
-//        var keyPair = keyGenerator.generateKeyPair();
-//
-//        backendPrivKey = (RSAPrivateKey) keyPair.getPrivate();
-//
-//        backendPubKey = (RSAPublicKey) keyPair.getPublic();
         var pubModulus = backendPubKey.getModulus().toByteArray();
 
         // make sure we get rid of the byte indicating the sign by cutting of the first byte
@@ -133,30 +83,22 @@ public class Terminal {
 
     private void sendCardIdAndExpirationDate(CardChannel channel, int cardId, LocalDate expirationDate) throws CardException {
         var data = new byte[4 + 3];
-        System.arraycopy(intToBytes(cardId), 0, data, 0, 4);
-        System.arraycopy(dateToBytes(expirationDate), 0, data, 4, 3);
+        System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, 4);
+        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, 4, 3);
 
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x04, (byte) 0x00, (byte) 0x00, data);
         var response = channel.transmit(apdu);
         System.out.printf("sendCardIdAndExpirationDate: %s\n", response);
     }
 
-    private byte[] dateToBytes(LocalDate date) {
-        byte day = (byte) date.getDayOfMonth();
-        byte month = (byte) date.getMonth().getValue();
-        byte year = (byte) (date.getYear() - 2000);
+    @Override
+    public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // TODO get cardID and expirationDate as user input (over the terminal)
+        var cardId = 1234;
+        var expirationDate = LocalDate.of(2030, 1, 31);
 
-        return new byte[]{day, month, year};
-    }
-
-    private byte[] intToBytes(int i) {
-        ByteBuffer bb = ByteBuffer.allocate(4);
-        bb.putInt(i);
-        return bb.array();
-    }
-
-    private boolean select_applet(CardChannel channel) throws CardException {
-        var response = channel.transmit(select_aid);
-        return response.getSW() == 9000;
+        var pubKeyCard = generateKeyMaterial(channel);
+        sendCardIdAndExpirationDate(channel, cardId, expirationDate);
+        signCard(channel, backendPrivKey, pubKeyCard, cardId, expirationDate);
     }
 }
