@@ -17,6 +17,11 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDate;
 
 public class Utils {
+    public final static int ID_SIZE = 4;
+    public final static int DATE_SIZE = 3;
+    public final static int KEY_SIZE = 256;
+    public final static int SIGNATURE_SIZE = KEY_SIZE;
+
     public static RSAPublicKey readPublicKey(File file) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         KeyFactory factory = KeyFactory.getInstance("RSA");
 

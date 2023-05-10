@@ -72,6 +72,8 @@ public class Backend {
             out.write(encoder.encodeToString(pub.getEncoded()));
             out.write("\n-----END RSA PUBLIC KEY-----\n");
         }
+
+        System.out.println("Done...\n\n");
     }
 
     enum TerminalType {
@@ -81,7 +83,7 @@ public class Backend {
     }
 
     private static void signTerminal() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidKeyException, SignatureException {
-        System.out.println("What kind terminal should the keys be generated for?");
+        System.out.println("What kind terminal should the signature be generated for?");
         System.out.println("  1. POS");
         System.out.println("  2. Reload");
 
@@ -135,5 +137,6 @@ public class Backend {
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(signature);
         }
+        System.out.println("Done...\n\n");
     }
 }

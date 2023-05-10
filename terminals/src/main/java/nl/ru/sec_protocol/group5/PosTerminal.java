@@ -3,6 +3,8 @@ package nl.ru.sec_protocol.group5;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -20,6 +22,7 @@ public class PosTerminal extends Terminal {
         try {
             posPubKey = Utils.readPublicKey(new File("pos_public.pem"));
         } catch (Exception e) {
+            System.out.println("Failed to read pos_public.pem");
             System.exit(1);
         }
     }
@@ -30,6 +33,7 @@ public class PosTerminal extends Terminal {
         try {
             posPrivKey = Utils.readPrivateKey(new File("pos_private.pem"));
         } catch (Exception e) {
+            System.out.println("Failed to read pos_private.pem");
             System.exit(1);
         }
     }
@@ -38,10 +42,18 @@ public class PosTerminal extends Terminal {
     //  We also have to figure out how to produce this signature most conveniently, probably with `openssl`.
     private static byte[] signature;
 
+    static {
+        try {
+            signature = Files.readAllBytes(Paths.get("pos_signature"));
+        } catch (Exception e) {
+            System.out.println("Failed to read pos_signature");
+            System.exit(1);
+        }
+    }
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        InitTerminal initTerminal = new InitTerminal();
-        initTerminal.start();
+        PosTerminal posTerminal = new PosTerminal();
+        posTerminal.start();
     }
 
     @Override

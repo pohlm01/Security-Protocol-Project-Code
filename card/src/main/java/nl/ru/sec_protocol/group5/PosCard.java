@@ -31,12 +31,22 @@ public class PosCard extends Applet implements ISO7816 {
 
     private boolean initialized;
 
-    private byte state;
+    private byte[] state;
+
+    /**
+     terminalId || counter || expirationDate
+      */
+    private byte[] transientData;
+    private byte[] terminalPubKey;
 
     PosCard() {
         card_id = new byte[4];
         expiration_date = new byte[3];
         signature = new byte[2048 / 8];
+        transientData = JCSystem.makeTransientByteArray((short) (4+4+3), JCSystem.CLEAR_ON_RESET); // TODO we may want to split this up
+        terminalPubKey = JCSystem.makeTransientByteArray((short) 256, JCSystem.CLEAR_ON_RESET); // TODO we may want to split this up
+        state = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        initialized = false;
         register();
     }
 
@@ -52,6 +62,10 @@ public class PosCard extends Applet implements ISO7816 {
             return;
         }
 
+        if (blocked) {
+            ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
+        }
+
         switch (instruction) {
             case (byte) 0x02:
                 generateKeys(apdu);
@@ -63,9 +77,12 @@ public class PosCard extends Applet implements ISO7816 {
                 signCard(apdu);
                 break;
             case (byte) 0x08:
-                buy(apdu);
+                posIdDateCounter(apdu);
                 break;
             case (byte) 0x0A:
+                buy(apdu);
+                break;
+            case (byte) 0x0C:
                 reload(apdu);
                 break;
             default:
@@ -74,21 +91,37 @@ public class PosCard extends Applet implements ISO7816 {
     }
 
     private void signCard(APDU apdu) {
+        if (initialized) {
+            ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
+        }
+
         byte[] buffer = apdu.getBuffer();
+
+        // Step 13
         signature[0] = buffer[OFFSET_P1];
         Util.arrayCopy(buffer, OFFSET_CDATA, signature, (short) 1, (short) (255));
         initialized = true;
     }
 
     private void setCardIdAndExpirationDate(APDU apdu) {
+        if (initialized) {
+            ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
+        }
+
         byte[] buffer = apdu.getBuffer();
 
+        // Step 8
         Util.arrayCopy(buffer, OFFSET_CDATA, card_id, (short) 0, (short) 4);
         Util.arrayCopy(buffer, (short) (OFFSET_CDATA + 4), expiration_date, (short) 0, (short) 3);
     }
 
     private void generateKeys(APDU apdu) {
+        if (initialized) {
+            ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED); // TODO somehow we get a 6f00 error instead of a 6d00
+        }
+
         byte[] buffer = apdu.getBuffer();
+
         // Step 4
         pub_key_backend = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
         pub_key_backend.setModulus(buffer, OFFSET_CDATA, (short) (KeyBuilder.LENGTH_RSA_2048 / 8));
@@ -104,6 +137,16 @@ public class PosCard extends Applet implements ISO7816 {
         // Step 6
         pub_key_card.getModulus(buffer, (short) 0);
         apdu.setOutgoingAndSend((short) 0, (short) (KeyBuilder.LENGTH_RSA_2048 / 8));
+    }
+
+    private void posIdDateCounter(APDU apdu) {
+        if (state[0] != INIT) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+
+        byte[] buffer = apdu.getBuffer();
+
+        Util.arrayCopy(buffer, OFFSET_CDATA, transientData, (short) 0, (short) (4 + 4 + 3));
     }
 
     private void buy(APDU apdu) {
