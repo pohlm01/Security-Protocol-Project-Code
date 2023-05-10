@@ -6,10 +6,11 @@ import javacard.security.*;
 public class PosCard extends Applet implements ISO7816 {
     private final static short EC_KEY_LENGTH = KeyBuilder.LENGTH_EC_F2M_193;
 
-    public final static byte RELOAD = 0;
-    public final static byte RELOAD_CONFIRM_PENDING = 1;
+    public final static byte INIT = 0;
+    public final static byte RELOAD = 1;
+    public final static byte RELOAD_CONFIRM_PENDING = 2;
     public final static byte POS = 3;
-    public final static byte FINISHED = 2;
+    public final static byte FINISHED = 4;
 
 
     private short balance; //FIXME Currently limited to 655,36 EUR
@@ -19,12 +20,12 @@ public class PosCard extends Applet implements ISO7816 {
 
     private javacard.security.RSAPublicKey pub_key_backend;
 
-    private byte[] signature;
+    private final byte[] signature;
 
     // 4 bytes
-    private byte[] card_id;
+    private final byte[] card_id;
 
-    private byte[] expiration_date; // [day, month, year(three last digits, using 2000 as base year)]
+    private final byte[] expiration_date; // [day, month, year(three last digits, using 2000 as base year)]
 
     private boolean blocked;
 

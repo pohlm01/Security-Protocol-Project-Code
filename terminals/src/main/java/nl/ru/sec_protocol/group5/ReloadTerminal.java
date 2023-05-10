@@ -10,25 +10,25 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 
-public class PosTerminal extends Terminal {
+public class ReloadTerminal extends Terminal {
 
     private static int counter = 0;
 
-    private static RSAPublicKey posPubKey;
+    private static RSAPublicKey reloadPubKey;
 
     static {
         try {
-            posPubKey = Utils.readPublicKey(new File("pos_public.pem"));
+            reloadPubKey = Utils.readPublicKey(new File("reload_public.pem"));
         } catch (Exception e) {
             System.exit(1);
         }
     }
 
-    private static RSAPrivateKey posPrivKey;
+    private static RSAPrivateKey reloadPrivKey;
 
     static {
         try {
-            posPrivKey = Utils.readPrivateKey(new File("pos_private.pem"));
+            reloadPrivKey = Utils.readPrivateKey(new File("reload_private.pem"));
         } catch (Exception e) {
             System.exit(1);
         }
