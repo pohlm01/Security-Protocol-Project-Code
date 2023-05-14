@@ -62,4 +62,8 @@ public class Utils {
         bb.putInt(i);
         return bb.array();
     }
+
+    public static LocalDate bytesToDate(byte[] date) {
+        return LocalDate.of(date[2] + 2000, date[1], date[0]);
+    }
 }

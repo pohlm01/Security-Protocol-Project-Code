@@ -4,6 +4,7 @@ import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
@@ -27,7 +28,7 @@ public class InitTerminal extends Terminal {
         }
     }
 
-    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         InitTerminal initTerminal = new InitTerminal();
         initTerminal.start();
     }

@@ -42,6 +42,8 @@ public class PosCard extends Applet implements ISO7816 {
     // 4 bytes
     private final byte[] card_id;
 
+    private short counter;
+
     private final byte[] expiration_date; // [day, month, year(three last digits, using 2000 as base year)]
 
     private boolean blocked;
@@ -178,9 +180,19 @@ public class PosCard extends Applet implements ISO7816 {
 
         byte[] buffer = apdu.getBuffer();
 
+        counter += 1;
+
+        // save terminal metadata
         Util.arrayCopy(buffer, OFFSET_CDATA, transientData, (short) 0, (short) (ID_SIZE + DATE_SIZE));
         Util.arrayCopy(buffer, (short) (OFFSET_CDATA + ID_SIZE + DATE_SIZE), terminalCounter, (short) 0, COUNTER_SIZE);
         Util.arrayCopy(buffer, (short) (OFFSET_CDATA + ID_SIZE + DATE_SIZE + COUNTER_SIZE), currentDate, (short) 0, DATE_SIZE);
+
+        // send card metadata
+        Util.arrayCopy(card_id, (short) 0, buffer, (short) 0, ID_SIZE);
+        Util.arrayCopy(expiration_date, (short) 0, buffer, (short) ID_SIZE, DATE_SIZE);
+        counterAsBytes(buffer, (short) (ID_SIZE + DATE_SIZE));
+
+        apdu.setOutgoingAndSend((short) 0, (short) (ID_SIZE + DATE_SIZE + COUNTER_SIZE));
 
         state[0] = RELOAD_META_EXCHANGED;
     }
@@ -222,7 +234,7 @@ public class PosCard extends Applet implements ISO7816 {
 
         state[0] = RELOAD_TERMINAL_AUTHENTICATED;
 
-        apdu.setOutgoingAndSend((short) 0, (short) KEY_SIZE);
+        apdu.setOutgoingAndSend((short) 0, (short) SIGNATURE_SIZE);
     }
 
     private void verifyTerminalSignature() {
@@ -232,6 +244,12 @@ public class PosCard extends Applet implements ISO7816 {
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
+    }
+
+    private void counterAsBytes(byte[] buffer, short startIndex) {
+        buffer[startIndex] = 0x00;
+        buffer[(short) (startIndex + 1)] = 0x00;
+        Util.setShort(buffer, (short) (startIndex + 2), counter);
     }
 
     private void buy(APDU apdu) {

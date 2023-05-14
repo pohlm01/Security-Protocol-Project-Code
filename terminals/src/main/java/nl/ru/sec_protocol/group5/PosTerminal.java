@@ -3,6 +3,7 @@ package nl.ru.sec_protocol.group5;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -51,7 +52,7 @@ public class PosTerminal extends Terminal {
         }
     }
 
-    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         PosTerminal posTerminal = new PosTerminal();
         posTerminal.start();
     }

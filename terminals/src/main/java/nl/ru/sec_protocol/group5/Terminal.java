@@ -4,6 +4,7 @@ import jnasmartcardio.Smartcardio;
 
 import javax.smartcardio.*;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -46,7 +47,7 @@ public abstract class Terminal {
         }
     }
 
-    public void start() throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public void start() throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         while (terminal.waitForCardPresent(0)) {
             var channel = terminal.connect("*").getBasicChannel();
             select_applet(channel);
@@ -55,7 +56,7 @@ public abstract class Terminal {
         }
     }
 
-    abstract public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException;
+    abstract public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException;
 
 
     private void select_applet(CardChannel channel) throws CardException {

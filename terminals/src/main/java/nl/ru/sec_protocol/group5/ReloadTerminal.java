@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -39,6 +40,9 @@ public class ReloadTerminal extends Terminal {
         this.reloadPubKey = Utils.readPublicKey(new File("reload_public.pem"));
         this.reloadPrivKey = Utils.readPrivateKey(new File("reload_private.pem"));
         this.signature = Files.readAllBytes(Paths.get("reload_signature"));
+
+        // Step 2
+        ReloadTerminal.counter += 1;
     }
 
 
@@ -48,11 +52,11 @@ public class ReloadTerminal extends Terminal {
     }
 
     @Override
-    public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         authenticateToCard(channel);
     }
 
-    private void authenticateToCard(CardChannel channel) throws CardException {
+    private void authenticateToCard(CardChannel channel) throws CardException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Step 2
         counter += 1;
 
@@ -70,6 +74,7 @@ public class ReloadTerminal extends Terminal {
 
         var response = channel.transmit(apdu);
         System.out.printf("response: %s\n", response);
+        var cardMetaData = response.getData();
 
         // exchange public keys
         var modulus = this.reloadPubKey.getModulus().toByteArray();
@@ -82,6 +87,7 @@ public class ReloadTerminal extends Terminal {
 
         response = channel.transmit(apdu);
         System.out.printf("receive pub card key: %s\n", response);
+        var cardPubKey = response.getData();
 
         // exchange signatures
         apdu = new CommandAPDU((byte) 0x00, SEND_SIGNATURE_APDU_INS, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
@@ -89,6 +95,26 @@ public class ReloadTerminal extends Terminal {
 
         response = channel.transmit(apdu);
         System.out.printf("receive card signature: %s\n", response);
-        System.out.println(Arrays.toString(response.getData()));
+
+        var cardVerified = verifyCardMetadata(cardMetaData, cardPubKey, response.getData());
+        System.out.printf("card verified: %s\n", cardVerified);
+    }
+
+    private boolean verifyCardMetadata(byte[] metadata, byte[] cardPubKey, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+        // verify that the card is not expired yet
+        var expiration_date = bytesToDate(Arrays.copyOfRange(metadata, ID_SIZE, ID_SIZE + DATE_SIZE));
+        if (expiration_date.isBefore(LocalDate.now())){
+            System.out.println("Card has already expired");
+            return false;
+        }
+
+        Signature sig_object = Signature.getInstance("SHA1withRSA");
+        sig_object.initVerify(Utils.readPublicKey(new File("backend_public.pem")));
+
+        sig_object.update(metadata, 0, ID_SIZE + DATE_SIZE);
+        sig_object.update(cardPubKey);
+        sig_object.update((byte) 0x01);
+
+        return sig_object.verify(signature);
     }
 }
