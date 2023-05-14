@@ -4,6 +4,7 @@ import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -13,59 +14,35 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
+import java.util.Arrays;
 
-import static nl.ru.sec_protocol.group5.Utils.DATE_SIZE;
-import static nl.ru.sec_protocol.group5.Utils.ID_SIZE;
+import static nl.ru.sec_protocol.group5.Utils.*;
 
 public class ReloadTerminal extends Terminal {
     private final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x08;
+    private final static byte SEND_PUB_KEY_APDU_INS = 0x0A;
+    private final static byte SEND_SIGNATURE_APDU_INS = 0x0C;
 
     private final int terminalId;
     private final LocalDate expirationDate;
     private static int counter = 0;
 
-    private static RSAPublicKey reloadPubKey;
+    private final RSAPublicKey reloadPubKey;
+    private final RSAPrivateKey reloadPrivKey;
+    private final byte[] signature;
 
-    static {
-        try {
-            reloadPubKey = Utils.readPublicKey(new File("reload_public.pem"));
-        } catch (Exception e) {
-            System.out.println("Failed to read reload_public.pem");
-            System.exit(1);
-        }
-    }
 
-    private static RSAPrivateKey reloadPrivKey;
-
-    static {
-        try {
-            reloadPrivKey = Utils.readPrivateKey(new File("reload_private.pem"));
-        } catch (Exception e) {
-            System.out.println("Failed to read reload_private.pem");
-            System.exit(1);
-        }
-    }
-
-    // FIXME find the correct data type and a representation to store this on the disk
-    //  We also have to figure out how to produce this signature most conveniently, probably with `openssl`.
-    private static byte[] signature;
-
-    static {
-        try {
-            signature = Files.readAllBytes(Paths.get("reload_signature"));
-        } catch (Exception e) {
-            System.out.println("Failed to read reload_signature");
-            System.exit(1);
-        }
-    }
-
-    public ReloadTerminal(int terminalId, LocalDate expirationDate) {
+    public ReloadTerminal(int terminalId, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         this.expirationDate = expirationDate;
         this.terminalId = terminalId;
+
+        this.reloadPubKey = Utils.readPublicKey(new File("reload_public.pem"));
+        this.reloadPrivKey = Utils.readPrivateKey(new File("reload_private.pem"));
+        this.signature = Files.readAllBytes(Paths.get("reload_signature"));
     }
 
 
-    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         ReloadTerminal reloadTerminal = new ReloadTerminal(12345, LocalDate.of(2023, 6, 1));
         reloadTerminal.start();
     }
@@ -78,7 +55,9 @@ public class ReloadTerminal extends Terminal {
     private void authenticateToCard(CardChannel channel) throws CardException {
         // Step 2
         counter += 1;
-        var dataToSend = new byte[ID_SIZE + DATE_SIZE + 4 + DATE_SIZE];
+
+        // Step 3
+        var dataToSend = new byte[ID_SIZE + DATE_SIZE + COUNTER_SIZE + DATE_SIZE];
 
         // send terminalId || expirationDate || counter || timestamp
         System.arraycopy(Utils.intToBytes(terminalId), 0, dataToSend, 0, ID_SIZE);
@@ -91,5 +70,25 @@ public class ReloadTerminal extends Terminal {
 
         var response = channel.transmit(apdu);
         System.out.printf("response: %s\n", response);
+
+        // exchange public keys
+        var modulus = this.reloadPubKey.getModulus().toByteArray();
+        // We start to copy from the third byte of the modulus onwards
+        // This is because the fist byte is unnecessary because it only indicates the sign, which is always positive in our case
+        // The second byte gets cut off because we can only send 255 bytes as payload, but the key is 256 bytes in size.
+        // Therefore, we transmit the first byte of the key (second in the byte array) as Param1 of the APDU.
+        apdu = new CommandAPDU((byte) 0x00, SEND_PUB_KEY_APDU_INS, modulus[1], (byte) 0x00, modulus, 2, KEY_SIZE - 1, KEY_SIZE);
+        System.out.printf("send pub terminal key: %s\n", apdu);
+
+        response = channel.transmit(apdu);
+        System.out.printf("receive pub card key: %s\n", response);
+
+        // exchange signatures
+        apdu = new CommandAPDU((byte) 0x00, SEND_SIGNATURE_APDU_INS, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
+        System.out.printf("send terminal signature: %s\n", apdu);
+
+        response = channel.transmit(apdu);
+        System.out.printf("receive card signature: %s\n", response);
+        System.out.println(Arrays.toString(response.getData()));
     }
 }

@@ -101,7 +101,7 @@ public class Backend {
         System.out.println("What terminal ID should be used?");
         var terminalId = scanner.nextInt();
 
-        System.out.println("When should the card expire (yyyy-mm-dd)?");
+        System.out.println("When should the terminal signature expire (yyyy-mm-dd)?");
 
         scanner.nextLine();
         LocalDate expirationDate = LocalDate.parse(scanner.nextLine());
@@ -119,12 +119,12 @@ public class Backend {
             filename_pub = name + "_public.pem";
         }
 
-        // 4 byte cardID || 3 byte expirationDate || 256 byte pubKeyTerminal || 1 byte distinguishingByte
+        // 4 byte terminalID || 3 byte expirationDate || 256 byte pubKeyTerminal || 1 byte distinguishingByte
         var dataToSign = new byte[4 + 3 + 256 + 1];
 
         System.arraycopy(Utils.intToBytes(terminalId), 0, dataToSign, 0, 4);
         System.arraycopy(Utils.dateToBytes(expirationDate), 0, dataToSign, 4, 3);
-        System.arraycopy(Utils.readPublicKey(new File(filename_pub)).getEncoded(), 0, dataToSign, 7, 256);
+        System.arraycopy(Utils.readPublicKey(new File(filename_pub)).getModulus().toByteArray(), 1, dataToSign, 7, 256);
         dataToSign[4 + 3 + 256] = distinguishingByte == TerminalType.Pos ? (byte) 0x02 : (byte) 0x03;
 
         Signature signer = Signature.getInstance("SHA1withRSA");

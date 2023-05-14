@@ -34,11 +34,11 @@ public class InitTerminal extends Terminal {
 
     private void signCard(CardChannel channel, RSAPrivateKey backendPrivKey, RSAPublicKey cardPublicKey, int cardId, LocalDate expirationDate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // cardId || expirationDate || K_c || 0x01
-        var data = new byte[ID_SIZE + DATE_SIZE + SIGNATURE_SIZE + 1];
+        var data = new byte[ID_SIZE + DATE_SIZE + KEY_SIZE + 1];
 
         System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, ID_SIZE);
         System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, DATE_SIZE);
-        System.arraycopy(cardPublicKey.getModulus().toByteArray(), 0, data, ID_SIZE + DATE_SIZE, KEY_SIZE);
+        System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + DATE_SIZE, KEY_SIZE);
         data[ID_SIZE + DATE_SIZE + SIGNATURE_SIZE] = 0x01;
 
         Signature signer = Signature.getInstance("SHA1withRSA");
@@ -50,12 +50,7 @@ public class InitTerminal extends Terminal {
         // thue we create a new buffer that contains the whole signature except for the first byte.
         // This missing, fist byte is then sent as the `Param1` of the APDU and resembled later in the card.
         // TODO check why we do not have the same problem with the public backend key send to the card.
-        var sendBuffer = new byte[SIGNATURE_SIZE - 1];
-        System.arraycopy(signature, 1, sendBuffer, 0, SIGNATURE_SIZE - 1);
-
-        System.out.printf("Signature length: %s\n", signature.length);
-
-        var apdu = new CommandAPDU((byte) 0x00, (byte) 0x06, signature[0], (byte) 0x00, sendBuffer);
+        var apdu = new CommandAPDU((byte) 0x00, (byte) 0x06, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1);
         System.out.printf("signCard: %s\n", apdu);
 
         var response = channel.transmit(apdu);
@@ -68,17 +63,15 @@ public class InitTerminal extends Terminal {
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
         var pubModulus = backendPubKey.getModulus().toByteArray();
 
-        // make sure we get rid of the byte indicating the sign by cutting of the first byte
-        var data = new byte[KEY_SIZE];
-        System.arraycopy(pubModulus, 1, data, 0, data.length);
-
-        var apdu = new CommandAPDU((byte) 0x00, (byte) 0x02, (byte) 0x00, (byte) 0x00, data, KEY_SIZE);
+        // make sure we get rid of the byte indicating the sign by cutting of the first byte.
+        // As the key is 256 byte in size, but the APDU data part can be max 255 bytes in size, the first byte goes into the param 1 of the APDU.
+        var apdu = new CommandAPDU((byte) 0x00, (byte) 0x02, pubModulus[1], (byte) 0x00, pubModulus, 2, KEY_SIZE - 1, KEY_SIZE);
         System.out.printf("generateKeyMaterial: %s\n", apdu);
 
         var response = channel.transmit(apdu);
         System.out.printf("generateKeyMaterial: %s\n", response);
 
-        if (response.getSW() != 0x9000){
+        if (response.getSW() != 0x9000) {
             System.out.println("Generating keys failed. Is the card already initialized?");
             System.exit(1);
         }
