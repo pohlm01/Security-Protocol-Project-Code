@@ -14,12 +14,9 @@ public class PosCard extends Applet implements ISO7816 {
 
     public final static short OFFSET_PUB_KEY = ID_SIZE + DATE_SIZE;
     public final static short OFFSET_DOMAIN_SEPARATOR = OFFSET_PUB_KEY + KEY_SIZE;
-//    public final static short OFFSET_SIGNATURE = OFFSET_DOMAIN_SEPARATOR + 1;
-
 
     private final static byte DOMAIN_SEPARATOR_POS = 0x02;
     private final static byte DOMAIN_SEPARATOR_RELOAD = 0x03;
-    private final static short EC_KEY_LENGTH = KeyBuilder.LENGTH_EC_F2M_193;
 
     public final static byte INIT = 0;
     public final static byte RELOAD_META_EXCHANGED = 1;
@@ -148,7 +145,7 @@ public class PosCard extends Applet implements ISO7816 {
 
     private void generateKeys(APDU apdu) {
         if (initialized) {
-            ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED); // TODO somehow we get a 6f00 error instead of a 6d00
+            ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
 
         byte[] buffer = apdu.getBuffer();

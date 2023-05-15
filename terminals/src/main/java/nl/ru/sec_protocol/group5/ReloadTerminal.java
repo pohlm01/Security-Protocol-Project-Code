@@ -78,8 +78,8 @@ public class ReloadTerminal extends Terminal {
 
         // exchange public keys
         var modulus = this.reloadPubKey.getModulus().toByteArray();
-        // We start to copy from the third byte of the modulus onwards
-        // This is because the fist byte is unnecessary because it only indicates the sign, which is always positive in our case
+
+        // We have a `dataOffset` of 2 because the fist byte is unnecessary because it only indicates the sign, which is always positive in our case.
         // The second byte gets cut off because we can only send 255 bytes as payload, but the key is 256 bytes in size.
         // Therefore, we transmit the first byte of the key (second in the byte array) as Param1 of the APDU.
         apdu = new CommandAPDU((byte) 0x00, SEND_PUB_KEY_APDU_INS, modulus[1], (byte) 0x00, modulus, 2, KEY_SIZE - 1, KEY_SIZE);

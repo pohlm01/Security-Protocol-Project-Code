@@ -18,18 +18,15 @@ import static nl.ru.sec_protocol.group5.Utils.*;
 
 public class InitTerminal extends Terminal {
 
-    private static RSAPrivateKey backendPrivKey;
+    private final RSAPrivateKey backendPrivKey;
 
-    static {
-        try {
-            backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
-        } catch (Exception e) {
-            System.exit(1);
-        }
+
+    private InitTerminal(String backend_priv_key_name) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        backendPrivKey = Utils.readPrivateKey(new File(backend_priv_key_name));
     }
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
-        InitTerminal initTerminal = new InitTerminal();
+        InitTerminal initTerminal = new InitTerminal("backend_private.pem");
         initTerminal.start();
     }
 
@@ -50,7 +47,6 @@ public class InitTerminal extends Terminal {
         // We are limited to send 255 bytes of data, but the signature is 256 bytes long
         // thue we create a new buffer that contains the whole signature except for the first byte.
         // This missing, fist byte is then sent as the `Param1` of the APDU and resembled later in the card.
-        // TODO check why we do not have the same problem with the public backend key send to the card.
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x06, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1);
         System.out.printf("signCard: %s\n", apdu);
 
