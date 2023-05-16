@@ -22,8 +22,8 @@ public class PosCard extends Applet implements ISO7816 {
     public final static byte RELOAD_META_EXCHANGED = 1;
     public final static byte RELOAD_PUB_KEYS_EXCHANGED = 2;
     public final static byte RELOAD_TERMINAL_AUTHENTICATED = 3;
-    public final static byte RELOAD_CONFIRM_PENDING = 4;
-    public final static byte POS = 5;
+    public final static byte RELOAD_AMOUNT_RECEIVED = 4;
+    public final static byte RELOAD_AMOUNT_AUTHENTICATED = 5;
     public final static byte FINISHED = 6;
 
 
@@ -111,7 +111,7 @@ public class PosCard extends Applet implements ISO7816 {
                 reloadReceiveAmount(apdu);
                 break;
             case (byte) 0x10:
-                reloadReceiveAmountSignature(apdu);
+                reloadVerifyAmountAndSignature(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -119,11 +119,36 @@ public class PosCard extends Applet implements ISO7816 {
     }
 
     private void reloadReceiveAmount(APDU apdu){
-        //FIXME
+        if (state[0] != RELOAD_TERMINAL_AUTHENTICATED) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+
+        byte[] buffer = apdu.getBuffer();
+
+        Util.arrayCopy(buffer, (short) 0, transientData, (short) 0, (short) 4);
+        // if (arrayCompare(buffer, (short) 0, (int) 0, (short) 0, (short) 4))
+        // TODO: Check if amount > 0
+
+        state[0] = RELOAD_AMOUNT_RECEIVED;
+
+        apdu.setOutgoingAndSend((short) 0, (short) 0);
     }
 
-    private void reloadReceiveAmountSignature(APDU apdu){
-        //FIXME
+    private void reloadVerifyAmountAndSignature(APDU apdu){
+        if (state[0] != RELOAD_AMOUNT_RECEIVED) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+
+        byte[] buffer = apdu.getBuffer();
+
+        counter += 1;
+
+        // TODO: Does not work (simply copied from reloadExchangeSignature. Might want to make a general verifySignature function that takes parameters.
+//        this.terminalSignature[0] = buffer[OFFSET_P1];
+//        Util.arrayCopy(buffer, OFFSET_CDATA, terminalSignature, (short) 1, (short) (SIGNATURE_SIZE - 1));
+//        verifyTerminalSignature();
+
+
     }
 
     private void signCard(APDU apdu) {
