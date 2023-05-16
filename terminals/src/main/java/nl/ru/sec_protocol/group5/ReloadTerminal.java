@@ -5,6 +5,7 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -16,6 +17,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Scanner;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
 
@@ -23,10 +25,15 @@ public class ReloadTerminal extends Terminal {
     private final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x08;
     private final static byte SEND_PUB_KEY_APDU_INS = 0x0A;
     private final static byte SEND_SIGNATURE_APDU_INS = 0x0C;
+    private final static byte SEND_AMOUNT = 0x0E;
+    private final static byte SEND_AMOUNT_SIGNATURE = 0x10;
 
     private final int terminalId;
     private final LocalDate expirationDate;
     private static int counter = 0;
+
+    private static int card_id;
+    private static int counter_card;
 
     private final RSAPublicKey reloadPubKey;
     private final RSAPrivateKey reloadPrivKey;
@@ -54,6 +61,42 @@ public class ReloadTerminal extends Terminal {
     @Override
     public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         authenticateToCard(channel);
+
+        var scanner = new Scanner(System.in);
+        System.out.println("What amount should be added to the card's balance?");
+        var amount = scanner.nextInt();
+        communicateAmount(channel, amount);
+
+    }
+
+    private void communicateAmount(CardChannel channel, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
+        // send amount
+        var dataToSend = new byte[4];
+        System.arraycopy(Utils.intToBytes(amount), 0, dataToSend, 0, 4);
+
+        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT, (byte) 0x00, (byte) 0x00, dataToSend);
+        System.out.printf("sending amount: %s\n", apdu);
+
+        var response = channel.transmit(apdu);
+        System.out.printf("response: %s\n", response);
+
+        // create signature
+        var data = new byte[COUNTER_SIZE + 4 + ID_SIZE];
+        System.arraycopy(Utils.intToBytes(counter_card), 0, data, 0, COUNTER_SIZE);
+        System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
+        System.arraycopy(Utils.intToBytes(card_id), 0, data, COUNTER_SIZE + 4, ID_SIZE);
+
+        Signature signer = Signature.getInstance("SHA1withRSA");
+        signer.initSign(reloadPrivKey);
+        signer.update(data);
+        var signature_amount = signer.sign();
+
+        // send signature
+        apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_SIGNATURE, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
+        System.out.printf("send amount signature: %s\n", apdu);
+
+        response = channel.transmit(apdu);
+        System.out.printf("receive amount signature: %s\n", response);
     }
 
     private void authenticateToCard(CardChannel channel) throws CardException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
@@ -75,6 +118,16 @@ public class ReloadTerminal extends Terminal {
         var response = channel.transmit(apdu);
         System.out.printf("response: %s\n", response);
         var cardMetaData = response.getData();
+
+        // extract the card id
+        byte[] card_id_bytes = Arrays.copyOfRange(cardMetaData, 0, ID_SIZE);
+        ByteBuffer wrapped_id = ByteBuffer.wrap(card_id_bytes);
+        card_id = wrapped_id.getInt();
+
+        // extract the counter
+        byte[] counter_card_bytes = Arrays.copyOfRange(cardMetaData, ID_SIZE + DATE_SIZE, cardMetaData.length);
+        ByteBuffer wrapped_counter = ByteBuffer.wrap(counter_card_bytes);
+        counter_card = wrapped_counter.getInt();
 
         // exchange public keys
         var modulus = this.reloadPubKey.getModulus().toByteArray();
