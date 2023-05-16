@@ -108,14 +108,22 @@ public class PosCard extends Applet implements ISO7816 {
                 reloadExchangeSignature(apdu);
                 break;
             case (byte) 0x0E:
-                buy(apdu);
+                reloadReceiveAmount(apdu);
                 break;
             case (byte) 0x10:
-                reload(apdu);
+                reloadReceiveAmountSignature(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
+    }
+
+    private void reloadReceiveAmount(APDU apdu){
+        //FIXME
+    }
+
+    private void reloadReceiveAmountSignature(APDU apdu){
+        //FIXME
     }
 
     private void signCard(APDU apdu) {
