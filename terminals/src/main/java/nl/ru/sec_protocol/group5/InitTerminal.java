@@ -95,6 +95,7 @@ public class InitTerminal extends Terminal {
         var scanner = new Scanner(System.in);
         System.out.println("What card ID should be used? (or press Enter)");
         int cardId;
+        // FIXME .hasNext() does not work for me ):
         if (!scanner.hasNext()) {
             cardId = 123;
         }
@@ -102,6 +103,7 @@ public class InitTerminal extends Terminal {
             cardId = scanner.nextInt();
         }
 
+        // FIXME .hasNext() does not work for me ):
         LocalDate expirationDate;
         System.out.println("When should the card expire (yyyy-mm-dd)? (or press Enter)");
         if (!scanner.hasNext()) {

@@ -22,8 +22,9 @@ public class PosCard extends Applet implements ISO7816 {
     public final static byte INIT = 0;
     public final static byte RELOAD_META_EXCHANGED = 1;
     public final static byte RELOAD_PUB_KEYS_EXCHANGED = 2;
-    public final static byte RELOAD_TERMINAL_AUTHENTICATED = 3;
-    public final static byte RELOAD_AMOUNT_RECEIVED = 4;
+    public final static byte RELOAD_TERMINAL_PASSIVELY_AUTHENTICATED = 3;
+    public final static byte RELOAD_TERMINAL_ACTIVELY_AUTHENTICATED = 3;
+    public final static byte RELOAD_AMOUNT_RECEIVED = 5;
     public final static byte RELOAD_AMOUNT_AUTHENTICATED = 5;
     public final static byte FINISHED = 6;
 
@@ -112,9 +113,12 @@ public class PosCard extends Applet implements ISO7816 {
                 reloadExchangeSignature(apdu);
                 break;
             case (byte) 0x26:
-                reloadReceiveAmount(apdu);
+                reloadActiveAuthentication(apdu);
                 break;
             case (byte) 0x28:
+                reloadReceiveAmount(apdu);
+                break;
+            case (byte) 0x30:
                 reloadVerifyAmountAndSignature(apdu);
                 break;
             case (byte) 0x40:
@@ -125,8 +129,8 @@ public class PosCard extends Applet implements ISO7816 {
         }
     }
 
-    private void reloadReceiveAmount(APDU apdu){
-        if (state[0] != RELOAD_TERMINAL_AUTHENTICATED) {
+    private void reloadReceiveAmount(APDU apdu) {
+        if (state[0] != RELOAD_TERMINAL_PASSIVELY_AUTHENTICATED) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
@@ -144,7 +148,7 @@ public class PosCard extends Applet implements ISO7816 {
         apdu.setOutgoingAndSend((short) 0, (short) 0);
     }
 
-    private void reloadVerifyAmountAndSignature(APDU apdu){
+    private void reloadVerifyAmountAndSignature(APDU apdu) {
         if (state[0] != RELOAD_AMOUNT_RECEIVED) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
@@ -276,16 +280,47 @@ public class PosCard extends Applet implements ISO7816 {
 
         // return cards signature for verification by the terminal
         Util.arrayCopy(signature, (short) 0, buffer, (short) 0, SIGNATURE_SIZE);
-        state[0] = RELOAD_TERMINAL_AUTHENTICATED;
+        state[0] = RELOAD_TERMINAL_PASSIVELY_AUTHENTICATED;
 
         apdu.setOutgoingAndSend((short) 0, (short) SIGNATURE_SIZE);
     }
 
-    private void verifySignature(byte[] sig_a, short offset_a, byte[] sig_b, short offset_b, RSAPublicKey key) {
+    private void reloadActiveAuthentication(APDU apdu) {
+        if (state[0] != RELOAD_TERMINAL_PASSIVELY_AUTHENTICATED) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        byte[] buffer = apdu.getBuffer();
+
+        this.terminalSignature[0] = buffer[OFFSET_P1];
+        Util.arrayCopy(buffer, OFFSET_CDATA, terminalSignature, (short) 1, (short) (SIGNATURE_SIZE - 1));
+
+        // card ID || card expiration date || card counter
+        Util.arrayCopy(card_id, (short) 0, transientData, OFFSET_PUB_KEY, COUNTER_SIZE);
+        Util.arrayCopy(expiration_date, (short) 0, transientData, (short) (OFFSET_PUB_KEY + COUNTER_SIZE), DATE_SIZE);
+        counterAsBytes(transientData, (short) (OFFSET_PUB_KEY + COUNTER_SIZE + DATE_SIZE));
+        verifySignature(transientData, OFFSET_PUB_KEY, (short) (ID_SIZE + DATE_SIZE + COUNTER_SIZE), terminalSignature, (short) 0, (RSAPublicKey) pub_key_terminal[0]);
+
+        // terminalId || expirationDate || terminal counter
+        Util.arrayCopy(terminalCounter, (short) 0, transientData, OFFSET_PUB_KEY, COUNTER_SIZE);
+        sign(transientData, OFFSET_PUB_KEY, (short) (ID_SIZE + DATE_SIZE + COUNTER_SIZE), buffer, (short) 0, priv_key_card);
+
+        state[0] = RELOAD_TERMINAL_ACTIVELY_AUTHENTICATED;
+
+        apdu.setOutgoingAndSend((short) 0, (short) SIGNATURE_SIZE);
+    }
+
+    private void sign(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPrivateKey key) {
+        // General verification function. Note that the whole byte array (starting from i or j) is compared.
+        Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+        signature.init(key, Signature.MODE_SIGN);
+        signature.sign(data, offset_data, data_length, sig, offset_sig);
+    }
+
+    private void verifySignature(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPublicKey key) {
         // General verification function. Note that the whole byte array (starting from i or j) is compared.
         Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
         signature.init(key, Signature.MODE_VERIFY);
-        boolean valid = signature.verify(sig_a, offset_a, SIGNATURE_SIZE, sig_b, offset_b, SIGNATURE_SIZE);
+        boolean valid = signature.verify(data, offset_data, data_length, sig, offset_sig, SIGNATURE_SIZE);
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }

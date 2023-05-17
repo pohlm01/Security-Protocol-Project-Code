@@ -6,6 +6,7 @@ import org.bouncycastle.util.io.pem.PemReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -13,8 +14,11 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDate;
+
+import static nl.ru.sec_protocol.group5.Terminal.pubExponent;
 
 public class Utils {
     public final static int ID_SIZE = 4;
@@ -61,6 +65,14 @@ public class Utils {
         ByteBuffer bb = ByteBuffer.allocate(4);
         bb.putInt(i);
         return bb.array();
+    }
+
+    public static RSAPublicKey bytesToPubKey(byte[] modulus) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        BigInteger m = new BigInteger(1, modulus, 0, KEY_SIZE);
+
+        RSAPublicKeySpec publicSpec = new RSAPublicKeySpec(m, pubExponent);
+        KeyFactory factory = KeyFactory.getInstance("RSA");
+        return (RSAPublicKey) factory.generatePublic(publicSpec);
     }
 
     public static LocalDate bytesToDate(byte[] date) {
