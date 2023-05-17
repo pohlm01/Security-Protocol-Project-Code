@@ -281,11 +281,11 @@ public class PosCard extends Applet implements ISO7816 {
         apdu.setOutgoingAndSend((short) 0, (short) SIGNATURE_SIZE);
     }
 
-    private void verifySignature(byte[] a, short i, byte[] b, short j, RSAPublicKey key) {
+    private void verifySignature(byte[] sig_a, short offset_a, byte[] sig_b, short offset_b, RSAPublicKey key) {
         // General verification function. Note that the whole byte array (starting from i or j) is compared.
         Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
         signature.init(key, Signature.MODE_VERIFY);
-        boolean valid = signature.verify(a, i, (short) a.length, b, j, (short) b.length);
+        boolean valid = signature.verify(sig_a, offset_a, SIGNATURE_SIZE, sig_b, offset_b, SIGNATURE_SIZE);
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
