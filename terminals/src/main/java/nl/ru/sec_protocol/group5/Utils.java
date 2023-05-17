@@ -8,8 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -75,7 +74,19 @@ public class Utils {
         return (RSAPublicKey) factory.generatePublic(publicSpec);
     }
 
-    public static LocalDate bytesToDate(byte[] date) {
-        return LocalDate.of(date[2] + 2000, date[1], date[0]);
+    public static byte[] sign(byte[] content, RSAPrivateKey key) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Signature signer = Signature.getInstance("SHA1withRSA");
+        signer.initSign(key);
+        signer.update(content);
+        return signer.sign();
+    }
+
+    public static LocalDate bytesToDate(byte[] date, int offset) {
+        return LocalDate.of(date[offset + 2] + 2000, date[offset + 1], date[offset]);
+    }
+
+    public static int bytesToInt(byte[] data, int offset){
+        ByteBuffer wrapped_id = ByteBuffer.wrap(data, offset, COUNTER_SIZE);
+        return wrapped_id.getInt();
     }
 }

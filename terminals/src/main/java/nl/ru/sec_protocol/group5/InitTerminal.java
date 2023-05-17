@@ -39,10 +39,7 @@ public class InitTerminal extends Terminal {
         System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + DATE_SIZE, KEY_SIZE);
         data[ID_SIZE + DATE_SIZE + SIGNATURE_SIZE] = 0x01;
 
-        Signature signer = Signature.getInstance("SHA1withRSA");
-        signer.initSign(backendPrivKey);
-        signer.update(data);
-        var signature = signer.sign();
+        var signature = Utils.sign(data, backendPrivKey);
 
         // We are limited to send 255 bytes of data, but the signature is 256 bytes long
         // thue we create a new buffer that contains the whole signature except for the first byte.

@@ -127,10 +127,8 @@ public class Backend {
         System.arraycopy(Utils.readPublicKey(new File(filename_pub)).getModulus().toByteArray(), 1, dataToSign, 7, 256);
         dataToSign[4 + 3 + 256] = distinguishingByte == TerminalType.Pos ? (byte) 0x02 : (byte) 0x03;
 
-        Signature signer = Signature.getInstance("SHA1withRSA");
-        signer.initSign(Utils.readPrivateKey(new File("backend_private.pem")));
-        signer.update(dataToSign);
-        var signature = signer.sign();
+        var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
+        var signature = Utils.sign(dataToSign, backendPrivKey);
 
         var signatureFilename = distinguishingByte == TerminalType.Pos ? "pos_signature" : "reload_signature";
         File outputFile = new File(signatureFilename);
