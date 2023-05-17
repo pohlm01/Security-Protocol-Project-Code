@@ -93,12 +93,24 @@ public class InitTerminal extends Terminal {
     @Override
     public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         var scanner = new Scanner(System.in);
-        System.out.println("What card ID should be used?");
-        var cardId = scanner.nextInt();
+        System.out.println("What card ID should be used? (or press Enter)");
+        int cardId;
+        if (!scanner.hasNext()) {
+            cardId = 123;
+        }
+        else {
+            cardId = scanner.nextInt();
+        }
 
-        System.out.println("When should the card expire (yyyy-mm-dd)?");
-        scanner.nextLine();
-        LocalDate expirationDate = LocalDate.parse(scanner.nextLine());
+        LocalDate expirationDate;
+        System.out.println("When should the card expire (yyyy-mm-dd)? (or press Enter)");
+        if (!scanner.hasNext()) {
+            scanner.nextLine();
+            expirationDate = LocalDate.parse(scanner.nextLine());
+        }
+        else {
+            expirationDate = LocalDate.parse("2033-10-10");
+        }
 
 
         var pubKeyCard = generateKeyMaterial(channel);
