@@ -63,6 +63,8 @@ public class PosCard extends Applet implements ISO7816 {
     private final byte[] terminalCounter;
     private final byte[] terminalSignature;
 
+    private final Signature signatureInstance;
+
     PosCard() {
         card_id = new byte[4];
         expiration_date = new byte[3];
@@ -73,6 +75,7 @@ public class PosCard extends Applet implements ISO7816 {
         terminalCounter = JCSystem.makeTransientByteArray(COUNTER_SIZE, JCSystem.CLEAR_ON_RESET);
         pub_key_terminal = JCSystem.makeTransientObjectArray((short) 1, JCSystem.CLEAR_ON_RESET);
         state = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        signatureInstance = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
         initialized = false;
         register();
     }
@@ -311,25 +314,22 @@ public class PosCard extends Applet implements ISO7816 {
 
     private void sign(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPrivateKey key) {
         // General verification function. Note that the whole byte array (starting from i or j) is compared.
-        Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-        signature.init(key, Signature.MODE_SIGN);
-        signature.sign(data, offset_data, data_length, sig, offset_sig);
+        signatureInstance.init(key, Signature.MODE_SIGN);
+        signatureInstance.sign(data, offset_data, data_length, sig, offset_sig);
     }
 
     private void verifySignature(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPublicKey key) {
         // General verification function. Note that the whole byte array (starting from i or j) is compared.
-        Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-        signature.init(key, Signature.MODE_VERIFY);
-        boolean valid = signature.verify(data, offset_data, data_length, sig, offset_sig, SIGNATURE_SIZE);
+        signatureInstance.init(key, Signature.MODE_VERIFY);
+        boolean valid = signatureInstance.verify(data, offset_data, data_length, sig, offset_sig, SIGNATURE_SIZE);
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
     }
 
     private void verifyTerminalSignature() {
-        Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-        signature.init(pub_key_backend, Signature.MODE_VERIFY);
-        boolean valid = signature.verify(transientData, (short) 0, (short) transientData.length, terminalSignature, (short) 0, SIGNATURE_SIZE);
+        signatureInstance.init(pub_key_backend, Signature.MODE_VERIFY);
+        boolean valid = signatureInstance.verify(transientData, (short) 0, (short) transientData.length, terminalSignature, (short) 0, SIGNATURE_SIZE);
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
