@@ -98,20 +98,23 @@ public class PosCard extends Applet implements ISO7816 {
             case (byte) 0x06:
                 signCard(apdu);
                 break;
-            case (byte) 0x08:
+            case (byte) 0x20:
                 reloadIdDateCounter(apdu);
                 break;
-            case (byte) 0x0A:
+            case (byte) 0x22:
                 reloadExchangePubKeys(apdu);
                 break;
-            case (byte) 0x0C:
+            case (byte) 0x24:
                 reloadExchangeSignature(apdu);
                 break;
-            case (byte) 0x0E:
+            case (byte) 0x26:
                 reloadReceiveAmount(apdu);
                 break;
-            case (byte) 0x10:
+            case (byte) 0x28:
                 reloadVerifyAmountAndSignature(apdu);
+                break;
+            case (byte) 0x40:
+                buy(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -283,10 +286,6 @@ public class PosCard extends Applet implements ISO7816 {
     }
 
     private void buy(APDU apdu) {
-        //FIXME
-    }
-
-    private void reload(APDU apdu) {
         //FIXME
     }
 }

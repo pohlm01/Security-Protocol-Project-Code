@@ -22,11 +22,11 @@ import java.util.Scanner;
 import static nl.ru.sec_protocol.group5.Utils.*;
 
 public class ReloadTerminal extends Terminal {
-    private final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x08;
-    private final static byte SEND_PUB_KEY_APDU_INS = 0x0A;
-    private final static byte SEND_SIGNATURE_APDU_INS = 0x0C;
-    private final static byte SEND_AMOUNT = 0x0E;
-    private final static byte SEND_AMOUNT_SIGNATURE = 0x10;
+    private final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x20;
+    private final static byte SEND_PUB_KEY_APDU_INS = 0x22;
+    private final static byte SEND_SIGNATURE_APDU_INS = 0x24;
+    private final static byte SEND_AMOUNT = 0x26;
+    private final static byte SEND_AMOUNT_SIGNATURE = 0x28;
 
     private final int terminalId;
     private final LocalDate expirationDate;
