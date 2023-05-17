@@ -153,10 +153,10 @@ public class PosCard extends Applet implements ISO7816 {
 
         counter += 1;
 
-        // TODO: fix offsets
         this.transientData[ID_SIZE + DATE_SIZE + 4] = buffer[OFFSET_P1];
-        Util.arrayCopy(buffer, OFFSET_CDATA, transientData, (short) 1, (short) (SIGNATURE_SIZE - 1));
+        Util.arrayCopy(buffer, OFFSET_CDATA, transientData, (short) (ID_SIZE + DATE_SIZE + 4 + 1), (short) (SIGNATURE_SIZE - 1));
 
+        // TODO
         //verifySignature(transientData, (short) (ID_SIZE + DATE_SIZE + 4), , );
 
     }
