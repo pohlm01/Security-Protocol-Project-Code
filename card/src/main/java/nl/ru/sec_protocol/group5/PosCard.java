@@ -132,8 +132,8 @@ public class PosCard extends Applet implements ISO7816 {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Return an error if the amount is negative
         if (Util.arrayCompare(buffer, (short) 0, ZERO, (short) 0, (short) 4) < 0) {
-            // amount is negative
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         Util.arrayCopy(buffer, (short) 0, transientData, (short) (ID_SIZE + DATE_SIZE), (short) 4);
@@ -153,11 +153,11 @@ public class PosCard extends Applet implements ISO7816 {
 
         counter += 1;
 
-        // TODO: Does not work (simply copied from reloadExchangeSignature. Might want to make a general verifySignature function that takes parameters.
-//        this.terminalSignature[0] = buffer[OFFSET_P1];
-//        Util.arrayCopy(buffer, OFFSET_CDATA, terminalSignature, (short) 1, (short) (SIGNATURE_SIZE - 1));
-//        verifyTerminalSignature();
+        // TODO: fix offsets
+        this.transientData[ID_SIZE + DATE_SIZE + 4] = buffer[OFFSET_P1];
+        Util.arrayCopy(buffer, OFFSET_CDATA, transientData, (short) 1, (short) (SIGNATURE_SIZE - 1));
 
+        //verifySignature(transientData, (short) (ID_SIZE + DATE_SIZE + 4), , );
 
     }
 
