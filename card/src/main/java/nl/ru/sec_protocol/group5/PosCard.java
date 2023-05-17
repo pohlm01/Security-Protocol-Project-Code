@@ -302,7 +302,7 @@ public class PosCard extends Applet implements ISO7816 {
 
         // terminalId || expirationDate || terminal counter
         Util.arrayCopy(terminalCounter, (short) 0, transientData, OFFSET_PUB_KEY, COUNTER_SIZE);
-        sign(transientData, OFFSET_PUB_KEY, (short) (ID_SIZE + DATE_SIZE + COUNTER_SIZE), buffer, (short) 0, priv_key_card);
+        sign(transientData, (short) 0, (short) (ID_SIZE + DATE_SIZE + COUNTER_SIZE), buffer, (short) 0, priv_key_card);
 
         state[0] = RELOAD_TERMINAL_ACTIVELY_AUTHENTICATED;
 

@@ -180,9 +180,7 @@ public class ReloadTerminal extends Terminal {
         System.out.printf("receive challenge signature: %s\n", response);
 
         var cardActivelyVerified = activeCardVerification(response.getData());
-        System.out.printf("card actively verified: %s\n", cardPassivelyVerified);
-
-
+        System.out.printf("card actively verified: %s\n", cardActivelyVerified);
     }
 
     private boolean activeCardVerification(byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidKeyException, SignatureException {
