@@ -5,6 +5,7 @@ import javacard.security.*;
 
 public class PosCard extends Applet implements ISO7816 {
     public final static byte[] PUBLIC_EXPONENT = new byte[]{0x01, 0x00, 0x01};
+    public final static byte[] ZERO = new byte[]{0x00, 0x00, 0x00, 0x00};
 
     public final static short ID_SIZE = 4;
     public final static short COUNTER_SIZE = 4;
@@ -128,9 +129,12 @@ public class PosCard extends Applet implements ISO7816 {
 
         byte[] buffer = apdu.getBuffer();
 
-        Util.arrayCopy(buffer, (short) 0, transientData, (short) 0, (short) 4);
-        // if (arrayCompare(buffer, (short) 0, (int) 0, (short) 0, (short) 4))
-        // TODO: Check if amount > 0
+        if (Util.arrayCompare(buffer, (short) 0, ZERO, (short) 0, (short) 4) < 0) {
+            // amount is negative
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        Util.arrayCopy(buffer, (short) 0, transientData, (short) (ID_SIZE + DATE_SIZE), (short) 4);
+        // transientData = terminalId || expirationDate || amount
 
         state[0] = RELOAD_AMOUNT_RECEIVED;
 
