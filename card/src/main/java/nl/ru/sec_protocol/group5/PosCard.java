@@ -35,6 +35,8 @@ public class PosCard extends Applet implements ISO7816 {
 
     private javacard.security.RSAPublicKey pub_key_backend;
 
+    private final Object[] pub_key_terminal;
+
     private final byte[] signature;
 
     // 4 bytes
@@ -68,6 +70,7 @@ public class PosCard extends Applet implements ISO7816 {
         terminalSignature = JCSystem.makeTransientByteArray(SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
         currentDate = JCSystem.makeTransientByteArray(DATE_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalCounter = JCSystem.makeTransientByteArray(COUNTER_SIZE, JCSystem.CLEAR_ON_RESET);
+        pub_key_terminal = JCSystem.makeTransientObjectArray((short) 1, JCSystem.CLEAR_ON_RESET);
         state = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
         initialized = false;
         register();
@@ -265,6 +268,11 @@ public class PosCard extends Applet implements ISO7816 {
         this.terminalSignature[0] = buffer[OFFSET_P1];
         Util.arrayCopy(buffer, OFFSET_CDATA, terminalSignature, (short) 1, (short) (SIGNATURE_SIZE - 1));
         verifyTerminalSignature();
+
+        this.pub_key_terminal[0] = KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
+        ((RSAPublicKey) pub_key_terminal[0]).setExponent(PUBLIC_EXPONENT, (short) 0, (short) PUBLIC_EXPONENT.length);
+        ((RSAPublicKey) pub_key_terminal[0]).setModulus(transientData, OFFSET_PUB_KEY, KEY_SIZE);
+
 
         // return cards signature for verification by the terminal
         Util.arrayCopy(signature, (short) 0, buffer, (short) 0, SIGNATURE_SIZE);
