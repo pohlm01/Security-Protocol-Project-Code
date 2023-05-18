@@ -22,7 +22,7 @@ public class ReloadTerminal extends Terminal {
 
     protected final int id;
     protected final LocalDate expirationDate;
-    protected static int counter = 0;
+    protected int counter = 0;
 
     protected final RSAPublicKey pubKey;
     protected final RSAPrivateKey privKey;
