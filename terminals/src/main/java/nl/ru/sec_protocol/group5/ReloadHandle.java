@@ -10,7 +10,6 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
-import static nl.ru.sec_protocol.group5.ReloadTerminal.*;
 import static nl.ru.sec_protocol.group5.Utils.*;
 import static nl.ru.sec_protocol.group5.Utils.SIGNATURE_SIZE;
 

@@ -17,11 +17,11 @@ import java.util.Scanner;
 import static nl.ru.sec_protocol.group5.Utils.*;
 
 public class InitTerminal extends Terminal {
-
     private final RSAPrivateKey backendPrivKey;
 
 
     private InitTerminal(String backend_priv_key_name) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        super(null, null, null, 0, null);
         backendPrivKey = Utils.readPrivateKey(new File(backend_priv_key_name));
     }
 
@@ -95,8 +95,7 @@ public class InitTerminal extends Terminal {
         // FIXME .hasNext() does not work for me ):
         if (!scanner.hasNext()) {
             cardId = 123;
-        }
-        else {
+        } else {
             cardId = scanner.nextInt();
         }
 
@@ -106,8 +105,7 @@ public class InitTerminal extends Terminal {
         if (!scanner.hasNext()) {
             scanner.nextLine();
             expirationDate = LocalDate.parse(scanner.nextLine());
-        }
-        else {
+        } else {
             expirationDate = LocalDate.parse("2033-10-10");
         }
 

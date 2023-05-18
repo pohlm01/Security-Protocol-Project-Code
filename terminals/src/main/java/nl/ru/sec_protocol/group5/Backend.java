@@ -15,11 +15,13 @@ public class Backend {
             System.out.println("What would you like to do. Please choose by typing in a number");
             System.out.println("  1. Generate Terminal keys");
             System.out.println("  2. Sign Terminal");
+            System.out.println("  3. exit");
 
             var scanner = new Scanner(System.in);
             switch (scanner.nextInt()) {
                 case 1 -> generateTerminalKeys();
                 case 2 -> signTerminal();
+                case 3 -> System.exit(0);
                 default -> {
                 }
             }

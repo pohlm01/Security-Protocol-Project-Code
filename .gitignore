@@ -38,3 +38,10 @@ build/
 ### Mac OS ###
 .DS_Store
 **/target/
+
+pos_private.pem
+pos_public.pem
+pos_signature
+reload_private.pem
+reload_public.pem
+reload_signature

@@ -13,29 +13,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
 
 public class ReloadTerminal extends Terminal {
-    protected final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x20;
-    protected final static byte SEND_PUB_KEY_APDU_INS = 0x22;
-    protected final static byte SEND_BACKEND_SIGNATURE_APDU_INS = 0x24;
-    protected final static byte SEND_CHALLENGE_SIGNATURE_APDU_INS = 0x26;
-    protected final static byte SEND_AMOUNT_APDU_INS = 0x28;
-    protected final static byte SEND_AMOUNT_SIGNATURE_APDU_INS = 0x30;
-
-    protected final int id;
-    protected final LocalDate expirationDate;
-    protected int counter = 0;
-
-    protected final RSAPublicKey pubKey;
-    protected final RSAPrivateKey privKey;
-    protected final byte[] signature;
 
 
     public ReloadTerminal(int terminalId, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        this.expirationDate = expirationDate;
-        this.id = terminalId;
-
-        this.pubKey = Utils.readPublicKey(new File("reload_public.pem"));
-        this.privKey = Utils.readPrivateKey(new File("reload_private.pem"));
-        this.signature = Files.readAllBytes(Paths.get("reload_signature"));
+        super(new File("reload_public.pem"), new File("reload_private.pem"), new File("reload_signature"), terminalId, expirationDate);
     }
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {

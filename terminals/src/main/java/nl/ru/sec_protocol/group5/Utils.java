@@ -27,6 +27,10 @@ public class Utils {
     public final static int SIGNATURE_SIZE = KEY_SIZE;
 
     public static RSAPublicKey readPublicKey(File file) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        if (file == null) {
+            return null;
+        }
+
         KeyFactory factory = KeyFactory.getInstance("RSA");
 
         try (FileReader keyReader = new FileReader(file);
@@ -40,6 +44,10 @@ public class Utils {
     }
 
     public static RSAPrivateKey readPrivateKey(File file) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        if (file == null) {
+            return null;
+        }
+
         KeyFactory factory = KeyFactory.getInstance("RSA");
 
         try (FileReader keyReader = new FileReader(file);

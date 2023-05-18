@@ -13,11 +13,17 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
 
-import static nl.ru.sec_protocol.group5.ReloadTerminal.*;
 import static nl.ru.sec_protocol.group5.Utils.*;
 import static nl.ru.sec_protocol.group5.Utils.SIGNATURE_SIZE;
 
 public abstract class Handle {
+    protected final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x20;
+    protected final static byte SEND_PUB_KEY_APDU_INS = 0x22;
+    protected final static byte SEND_BACKEND_SIGNATURE_APDU_INS = 0x24;
+    protected final static byte SEND_CHALLENGE_SIGNATURE_APDU_INS = 0x26;
+    protected final static byte SEND_AMOUNT_APDU_INS = 0x28;
+    protected final static byte SEND_AMOUNT_SIGNATURE_APDU_INS = 0x30;
+
     protected final static byte TERMINAL_TYPE_POS = 0x02;
     protected final static byte TERMINAL_TYPE_RELOAD = 0x03;
     protected int cardId;
@@ -25,9 +31,9 @@ public abstract class Handle {
     protected LocalDate cardExpirationDate;
     protected RSAPublicKey cardPubKey;
 
-    protected final ReloadTerminal terminal;
+    protected final Terminal terminal;
 
-    public Handle(ReloadTerminal terminal) {
+    public Handle(Terminal terminal) {
         this.terminal = terminal;
     }
 

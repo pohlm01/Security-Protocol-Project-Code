@@ -6,35 +6,37 @@ import javax.smartcardio.*;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.time.LocalDate;
 
 
 public abstract class Terminal {
-
     private CardTerminal terminal;
+    final RSAPublicKey backendPubKey;
 
-    public static RSAPublicKey backendPubKey;
 
-    static {
-        try {
-            backendPubKey = Utils.readPublicKey(new File("backend_public.pem"));
-        } catch (Exception e) {
-            System.exit(1);
-        }
-    }
+    final int id;
+    final LocalDate expirationDate;
+    int counter = 0;
+
+    final RSAPublicKey pubKey;
+    final RSAPrivateKey privKey;
+    final byte[] signature;
 
     public static final BigInteger pubExponent = new BigInteger("65537");
     private static final byte[] aid = new byte[]{0x2D, 0x54, 0x45, 0x53, 0x54, 0x70};
-
     private static final CommandAPDU select_aid = new CommandAPDU((byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, aid);
 
 
-    Terminal() {
+    Terminal(File publicKey, File privateKey, File signature, int id, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         try {
             Security.addProvider(new Smartcardio());
             CardTerminals terminals = TerminalFactory.getInstance("PC/SC", null, Smartcardio.PROVIDER_NAME).terminals();
@@ -45,6 +47,18 @@ public abstract class Terminal {
             System.out.printf("Error connecting to terminal: %s", e);
             System.exit(1);
         }
+        this.id = id;
+        this.expirationDate = expirationDate;
+
+        this.pubKey = Utils.readPublicKey(publicKey);
+        this.privKey = Utils.readPrivateKey(privateKey);
+        if (signature == null) {
+            this.signature = null;
+        } else {
+            this.signature = Files.readAllBytes(signature.toPath());
+        }
+
+        this.backendPubKey = Utils.readPublicKey(new File("backend_public.pem"));;
     }
 
     public void start() throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
