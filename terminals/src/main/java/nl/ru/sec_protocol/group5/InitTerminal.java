@@ -30,6 +30,17 @@ public class InitTerminal extends Terminal {
         initTerminal.start();
     }
 
+    /**
+     * Signs the card metadata and public key together with the domain separator 0x01 using the private key of the
+     * backend and sends to the card
+     *
+     * @param channel        to communicate with the card
+     * @param backendPrivKey to sign
+     * @param cardPublicKey  to be signed
+     * @param cardId         to be signed
+     * @param expirationDate to be signed
+     * @author Maximilian Pohl
+     */
     private void signCard(CardChannel channel, RSAPrivateKey backendPrivKey, RSAPublicKey cardPublicKey, int cardId, LocalDate expirationDate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // cardId || expirationDate || K_c || 0x01
         var data = new byte[ID_SIZE + DATE_SIZE + KEY_SIZE + 1];
@@ -53,6 +64,7 @@ public class InitTerminal extends Terminal {
 
     /**
      * @return Public key generated on the card
+     * @author Maximilian Pohl
      **/
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
         var pubModulus = backendPubKey.getModulus().toByteArray();
@@ -90,23 +102,24 @@ public class InitTerminal extends Terminal {
     @Override
     public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         var scanner = new Scanner(System.in);
-        System.out.println("What card ID should be used? (or press Enter)");
+        System.out.println("What card ID should be used? (or press Enter to use default)");
         int cardId;
-        // FIXME .hasNext() does not work for me ):
-        if (!scanner.hasNext()) {
+        var input = scanner.nextLine();
+        if (input.isEmpty()) {
             cardId = 123;
+            System.out.printf("Using default card ID '%s'\n", cardId);
         } else {
-            cardId = scanner.nextInt();
+            cardId = Integer.parseInt(input);
         }
 
-        // FIXME .hasNext() does not work for me ):
+        System.out.println("When should the card expire (yyyy-mm-dd)? (or press Enter to use default)");
+        input = scanner.nextLine();
         LocalDate expirationDate;
-        System.out.println("When should the card expire (yyyy-mm-dd)? (or press Enter)");
-        if (!scanner.hasNext()) {
-            scanner.nextLine();
-            expirationDate = LocalDate.parse(scanner.nextLine());
-        } else {
+        if (input.isEmpty()) {
             expirationDate = LocalDate.parse("2033-10-10");
+            System.out.printf("Using default expiration date '%s'\n", expirationDate);
+        } else {
+            expirationDate = LocalDate.parse(input);
         }
 
 

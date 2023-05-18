@@ -127,6 +127,11 @@ public class MutualAuth {
         Utils.counterAsBytes(applet.cardCounter, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.DATE_SIZE));
         applet.utils.verifySignature(applet.transientData, Constants.OFFSET_PUB_KEY, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
+        if (expired()) {
+            applet.blocked = true;
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+
         // terminalId || expirationDate || terminal counter
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
         applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), buffer, (short) 0, applet.cardPrivKey);
@@ -134,6 +139,27 @@ public class MutualAuth {
         applet.state[0] = Constants.TERMINAL_ACTIVELY_AUTHENTICATED;
 
         apdu.setOutgoingAndSend((short) 0, (short) Constants.SIGNATURE_SIZE);
+    }
+
+    /**
+     * @return true if the card is expired, false otherwise
+     * @author Maximilian Pohl
+     */
+    private boolean expired() {
+        // year
+        if (applet.currentDate[2] < applet.cardExpirationDate[2]) {
+            return false;
+        } else if (applet.currentDate[2] > applet.cardExpirationDate[2]) {
+            return true;
+        }
+        // month
+        if (applet.currentDate[1] < applet.cardExpirationDate[1]) {
+            return false;
+        } else if (applet.currentDate[1] > applet.cardExpirationDate[1]) {
+            return true;
+        }
+        // day
+        return applet.currentDate[0] >= applet.cardExpirationDate[0];
     }
 
 }
