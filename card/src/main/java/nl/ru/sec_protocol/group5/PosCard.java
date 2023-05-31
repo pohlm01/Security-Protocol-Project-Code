@@ -1,11 +1,12 @@
 package nl.ru.sec_protocol.group5;
 
+import com.sun.imageio.plugins.jpeg.JPEG;
 import javacard.framework.*;
 import javacard.security.*;
 
 public class PosCard extends Applet implements ISO7816 {
     /////////// Persistent part /////////
-    protected short balance; //FIXME Currently limited to 655,36 EUR
+    protected byte[] balance;
     protected final byte[] cardId;
     protected final byte[] cardExpirationDate; // [day, month, year(three last digits, using 2000 as base year)]
     protected final byte[] cardSignature;
@@ -33,6 +34,11 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] terminalSignature;
 
     protected final byte[] currentDate;
+    protected byte[] amount;
+    protected short[] xA;
+    protected short[] xB;
+    protected short[] yA;
+    protected short[] yB;
 
 
     ////////// Helper objects ///////////
@@ -43,7 +49,7 @@ public class PosCard extends Applet implements ISO7816 {
     final Signature signatureInstance;
 
     PosCard() {
-        balance = 0;
+        balance = new byte[]{0x00,0x00,0x00,0x00};
         cardId = new byte[4];
         cardExpirationDate = new byte[3];
         cardSignature = new byte[2048 / 8];
@@ -61,6 +67,13 @@ public class PosCard extends Applet implements ISO7816 {
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
         currentDate = JCSystem.makeTransientByteArray(Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
+
+        amount = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
+        xA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        xB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        yA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        yB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
+
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);

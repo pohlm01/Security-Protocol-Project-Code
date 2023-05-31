@@ -10,6 +10,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
@@ -29,37 +30,6 @@ public class ReloadHandle extends Handle {
         communicateAmount(channel, amount);
 
         log_and_finalize(channel, amount);
-    }
-
-    /**
-     * Signs the amount, card counter and card id and verifies successful finalization of the reload protocol
-     *
-     * @param channel channel to communicate with the card
-     * @param amount amount to increase the card's balance with
-     * @author Bart Veldman
-     */
-    private void log_and_finalize(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
-        // pretend we log the transaction here
-
-        var data= new byte[COUNTER_SIZE + 4 + ID_SIZE];
-        cardCounter += 1;
-        System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
-        System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
-        System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + 4, ID_SIZE);
-
-        var signature_amount = Utils.sign(data, terminal.privKey);
-
-        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
-        System.out.printf("send finalizing signature: %s\n", apdu);
-
-        var response = channel.transmit(apdu);
-        if (response.getSW() != 0x9000) {
-            System.out.println("Reloading failed");
-            System.exit(1);
-        }
-        else {
-            System.out.println("Card reload successful. Added " + amount + " to the card's balance");
-        }
     }
 
     /**
@@ -100,7 +70,36 @@ public class ReloadHandle extends Handle {
         System.out.printf("signatures verified: %s\n", signature_verified);
     }
 
-    // TODO move this to utils?
+    /**
+     * Signs the amount, card counter and card id and verifies successful finalization of the reload protocol
+     *
+     * @param channel channel to communicate with the card
+     * @param amount amount to increase the card's balance with
+     * @author Bart Veldman
+     */
+    private void log_and_finalize(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
+        // pretend we log the transaction here
+
+        var data= new byte[COUNTER_SIZE + 4 + ID_SIZE];
+        cardCounter += 1;
+        System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
+        System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
+        System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + 4, ID_SIZE);
+
+        var signature_amount = Utils.sign(data, terminal.privKey);
+
+        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
+        System.out.printf("send finalizing signature: %s\n", apdu);
+
+        var response = channel.transmit(apdu);
+        if (response.getSW() != 0x9000) {
+            System.out.println("Reloading failed");
+            System.exit(1);
+        }
+        System.out.println("Card reload successful. Added " + amount + " to the card's balance");
+    }
+
+    // TODO move this to utils
     private boolean verifySignature(byte[] signature, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sig_object = Signature.getInstance("SHA1withRSA");
         sig_object.initVerify(cardPubKey);

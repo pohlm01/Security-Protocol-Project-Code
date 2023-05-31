@@ -80,8 +80,6 @@ public class Init {
         applet.cardPrivKey = (RSAPrivateKey) keyPair.getPrivate();
         applet.cardPubKey = (RSAPublicKey) keyPair.getPublic();
 
-        applet.balance = 0;
-
         // Step 6
         applet.cardPubKey.getModulus(buffer, (short) 0);
         apdu.setOutgoingAndSend((short) 0, Constants.KEY_SIZE);

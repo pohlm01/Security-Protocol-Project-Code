@@ -32,7 +32,7 @@ public class Reload {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         // terminal ID || 4 bytes for counter || amount
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + 4), (short) 4);
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), (short) 4);
 
         applet.state[0] = Constants.RELOAD_AMOUNT_RECEIVED;
     }
@@ -100,7 +100,9 @@ public class Reload {
 
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
-        // TODO increase balance
+        // increase card's balance
+        Util.arrayCopy(applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), applet.amount, (short) 0, (short) 4);
+        applet.utils.increaseBalance(applet.amount);
 
         applet.state[0] = Constants.FINISHED;
 
