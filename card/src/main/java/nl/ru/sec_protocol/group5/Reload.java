@@ -21,7 +21,7 @@ public class Reload {
      * @author Bart Veldman
      */
     void receiveAmount(APDU apdu) {
-        if (applet.state[0] != Constants.TERMINAL_PASSIVELY_AUTHENTICATED) {
+        if (applet.state[0] != Constants.TERMINAL_ACTIVELY_AUTHENTICATED) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
