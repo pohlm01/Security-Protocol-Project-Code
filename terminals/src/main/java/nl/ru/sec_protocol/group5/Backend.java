@@ -20,14 +20,16 @@ public class Backend {
             System.out.println("  1. Generate Terminal keys");
             System.out.println("  2. Sign Terminal");
             System.out.println("  3. Block a card");
-            System.out.println("  4. exit");
+            System.out.println("  4. Create empty CRL list (a terminal always needs a valid CRL)");
+            System.out.println("  5. exit");
 
             var scanner = new Scanner(System.in);
             switch (scanner.nextInt()) {
                 case 1 -> generateTerminalKeys();
                 case 2 -> signTerminal();
                 case 3 -> blockCard();
-                case 4 -> System.exit(0);
+                case 4 -> createEmptyCrl();
+                case 5 -> System.exit(0);
                 default -> {
                 }
             }
@@ -61,6 +63,8 @@ public class Backend {
             var encodedSignature = Base64.getEncoder().encode(signature);
             crl.seek(crl.length() - 344 + Integer.toString(cardId).getBytes().length + 1);
             crl.write(encodedSignature);
+
+            System.out.printf("Done adding card with ID %s to CRL... \n\n", cardId);
         } catch (Exception e) {
             System.out.println("filed to write to CRL file");
             e.printStackTrace();
@@ -72,15 +76,21 @@ public class Backend {
 
     private static void createEmptyCrl() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
-        var today = LocalDate.now();
+        var expirationDate = LocalDate.now().plusDays(10);
+
+        if (new File("CRL").exists()){
+            throw new RuntimeException("CRL already exists. If you want to create an empty one please delete the current CRL first");
+        }
+
         try (RandomAccessFile crl = new RandomAccessFile("CRL", "rw")) {
-            crl.write(today.toString().getBytes());
+            crl.write(expirationDate.toString().getBytes());
             crl.write('\n');
             var dataToSign = new byte[(int) crl.length()];
             crl.read(dataToSign);
             var signature = Utils.sign(dataToSign, backendPrivKey);
             var encodedSignature = Base64.getEncoder().encode(signature);
             crl.write(encodedSignature);
+            System.out.println("Created empty CRL");
         } catch (Exception e) {
             System.out.println("filed to write to CRL file");
             e.printStackTrace();

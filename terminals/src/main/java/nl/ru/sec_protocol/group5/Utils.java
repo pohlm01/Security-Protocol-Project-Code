@@ -216,7 +216,7 @@ public class Utils {
             signature = Base64.getDecoder().decode(encodedSignature);
             return verifySignature(signature, dataToVerify, backendPubKey);
         } catch (Exception e) {
-            System.out.println("failed reading CRL");
+            System.out.println("Failed reading CRL. Make sure you created a valid CRL first. Use the Backend for that.");
             e.printStackTrace();
         }
         return false;

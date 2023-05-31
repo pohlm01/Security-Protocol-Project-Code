@@ -236,6 +236,7 @@ public abstract class Handle {
         for (var blockedCardIds : parseCrl()) {
             if (blockedCardIds == this.cardId){
                 blockCard(channel);
+                throw new RuntimeException("Card got blocked by backend");
             }
         }
     }
