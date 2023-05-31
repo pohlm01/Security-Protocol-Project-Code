@@ -82,7 +82,7 @@ public class ReloadHandle extends Handle {
 
         // create signature
         var data = new byte[COUNTER_SIZE + 4 + ID_SIZE];
-        cardCounter += 1; // TODO sanity check
+        cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
         System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
         System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + 4, ID_SIZE);
@@ -96,10 +96,8 @@ public class ReloadHandle extends Handle {
         response = channel.transmit(apdu);
         System.out.printf("receive amount signature: %s\n", response);
 
-        if (verifySignature(response.getData(), amount)) {
-            System.out.printf("signatures verified: %s\n", "true");
-            terminal.log_signature = response.getData();
-        }
+        var signature_verified = verifySignature(response.getData(), amount);
+        System.out.printf("signatures verified: %s\n", signature_verified);
     }
 
     // TODO move this to utils?
