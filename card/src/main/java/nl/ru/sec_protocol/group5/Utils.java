@@ -42,6 +42,13 @@ public class Utils {
         Util.setShort(buffer, (short) (startIndex + 2), counter);
     }
 
+    /**
+     * Addition operation on two byte arrays of length 4 (amount and balance)
+     * Casts the byte arrays to short arrays of length 2 and checks for overflow
+     *
+     * @param  amount amount to increase the card's balance with
+     * @author Bart Veldman
+     */
     void increaseBalance(byte[] amount){
         applet.xA[0] = Util.getShort(amount, (short) 0);
         applet.xB[0] = Util.getShort(amount, (short) 2);
