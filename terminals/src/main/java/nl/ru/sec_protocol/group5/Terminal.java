@@ -38,9 +38,9 @@ public abstract class Terminal {
     Terminal(File publicKey, File privateKey, File signature, int id, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         try {
             Security.addProvider(new Smartcardio());
-            CardTerminals terminals = TerminalFactory.getInstance("PC/SC", null, Smartcardio.PROVIDER_NAME).terminals();
+            var terminals = TerminalFactory.getInstance("PC/SC", null, Smartcardio.PROVIDER_NAME).terminals();
 
-            java.util.List<CardTerminal> terminal_list = terminals.list();
+            var terminal_list = terminals.list();
             this.terminal = terminal_list.get(0);
         } catch (Exception e) {
             System.out.printf("Error connecting to terminal: %s", e);
@@ -57,13 +57,13 @@ public abstract class Terminal {
             this.signature = Files.readAllBytes(signature.toPath());
         }
 
-        this.backendPubKey = Utils.readPublicKey(new File("backend_public.pem"));;
+        this.backendPubKey = Utils.readPublicKey(new File("backend_public.pem"));
     }
 
     public void start() throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
         while (terminal.waitForCardPresent(0)) {
             var channel = terminal.connect("*").getBasicChannel();
-            select_applet(channel);
+            selectApplet(channel);
             handleCard(channel);
             terminal.waitForCardAbsent(0);
         }
@@ -72,7 +72,7 @@ public abstract class Terminal {
     abstract public void handleCard(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException;
 
 
-    private void select_applet(CardChannel channel) throws CardException {
+    private void selectApplet(CardChannel channel) throws CardException {
         var response = channel.transmit(select_aid);
         if (response.getSW() != 0x9000) {
             // TODO make sure this is less paranoid and tries again. Currently it crashes very easily, because if the card gets close to the terminal it tries to access it over NFC first.

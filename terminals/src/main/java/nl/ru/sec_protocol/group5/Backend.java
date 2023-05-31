@@ -84,6 +84,9 @@ public class Backend {
         Reload,
     }
 
+    /**
+     * @author Maximilian Pohl
+     */
     private static void signTerminal() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidKeyException, SignatureException {
         System.out.println("What kind terminal should the signature be generated for?");
         System.out.println("  1. POS");
