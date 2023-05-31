@@ -132,7 +132,7 @@ public class MutualAuth {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
-        // terminalId || expirationDate || terminal counter
+        // terminalId || terminal expirationDate || terminal counter
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
         applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), buffer, (short) 0, applet.cardPrivKey);
 

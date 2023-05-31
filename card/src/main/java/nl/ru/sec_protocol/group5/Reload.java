@@ -32,11 +32,9 @@ public class Reload {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         // terminal ID || 4 bytes for counter || amount
-        Util.arrayCopy(buffer, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + 4), (short) 4);
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + 4), (short) 4);
 
         applet.state[0] = Constants.RELOAD_AMOUNT_RECEIVED;
-
-        apdu.setOutgoingAndSend((short) 0, (short) 0);
     }
 
     /**
@@ -60,7 +58,9 @@ public class Reload {
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
         // terminal ID || card counter || amount || card ID
+        // the terminal ID should already be present, because it was written to transient data in the last step of the mutual auth
         Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.ID_SIZE);
+        // The amount is written at the correct place during `receiveAmount`
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4), Constants.ID_SIZE);
 
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
