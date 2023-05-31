@@ -10,24 +10,87 @@ import java.util.Base64;
 import java.util.Scanner;
 
 public class Backend {
+
+    /**
+     * @author Maximilian Pohl
+     */
     public static void main(String[] args) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         while (true) {
             System.out.println("What would you like to do. Please choose by typing in a number");
             System.out.println("  1. Generate Terminal keys");
             System.out.println("  2. Sign Terminal");
-            System.out.println("  3. exit");
+            System.out.println("  3. Block a card");
+            System.out.println("  4. exit");
 
             var scanner = new Scanner(System.in);
             switch (scanner.nextInt()) {
                 case 1 -> generateTerminalKeys();
                 case 2 -> signTerminal();
-                case 3 -> System.exit(0);
+                case 3 -> blockCard();
+                case 4 -> System.exit(0);
                 default -> {
                 }
             }
         }
     }
 
+    /**
+     * @author Maximilian Pohl
+     */
+    private static void blockCard() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        System.out.println("What is the ID of the card that should be blocked?");
+        var scanner = new Scanner(System.in);
+        var cardId = scanner.nextInt();
+        var expirationDate = LocalDate.now().plusDays(10);
+        var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
+
+        if (!new File("CRL").exists()){
+            createEmptyCrl();
+        }
+
+        try (RandomAccessFile crl = new RandomAccessFile("CRL", "rw")) {
+            crl.write(expirationDate.toString().getBytes());
+            crl.seek(crl.length() - 344);
+            crl.write(Integer.toString(cardId).getBytes());
+            crl.write('\n');
+            // length - (old) signature length in base64 + newly added card ID
+            var dataToSign = new byte[(int) (crl.length() - 344 + Integer.toString(cardId).getBytes().length)];
+            crl.seek(0);
+            crl.read(dataToSign, 0, dataToSign.length);
+            var signature = Utils.sign(dataToSign, backendPrivKey);
+            var encodedSignature = Base64.getEncoder().encode(signature);
+            crl.seek(crl.length() - 344 + Integer.toString(cardId).getBytes().length + 1);
+            crl.write(encodedSignature);
+        } catch (Exception e) {
+            System.out.println("filed to write to CRL file");
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+
+    }
+
+    private static void createEmptyCrl() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
+        var today = LocalDate.now();
+        try (RandomAccessFile crl = new RandomAccessFile("CRL", "rw")) {
+            crl.write(today.toString().getBytes());
+            crl.write('\n');
+            var dataToSign = new byte[(int) crl.length()];
+            crl.read(dataToSign);
+            var signature = Utils.sign(dataToSign, backendPrivKey);
+            var encodedSignature = Base64.getEncoder().encode(signature);
+            crl.write(encodedSignature);
+        } catch (Exception e) {
+            System.out.println("filed to write to CRL file");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    /**
+     * @author Maximilian Pohl
+     */
     private static void generateTerminalKeys() throws NoSuchAlgorithmException, IOException {
         System.out.println("What kind terminal should the keys be generated for?");
         System.out.println("  1. POS (filename: `pos_{public/private}.pem`)");

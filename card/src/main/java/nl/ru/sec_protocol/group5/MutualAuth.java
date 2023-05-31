@@ -31,6 +31,7 @@ public class MutualAuth {
 
         // save terminal metadata
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE));
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalId, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE), applet.terminalCounter, (short) 0, Constants.COUNTER_SIZE);
         Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.currentDate, (short) 0, Constants.DATE_SIZE);
 
