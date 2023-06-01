@@ -28,6 +28,7 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] transientData;
 
     protected final Object[] terminalPubKey;
+    protected final byte[] terminalId;
     protected final byte[] terminalCounter;
     protected final byte[] terminalType;
     protected final byte[] terminalSignature;
@@ -39,6 +40,7 @@ public class PosCard extends Applet implements ISO7816 {
     private final Init init;
     private final MutualAuth mutualAuth;
     private final Reload reload;
+    private final Block block;
     final Utils utils;
     final Signature signatureInstance;
 
@@ -56,6 +58,7 @@ public class PosCard extends Applet implements ISO7816 {
         transientData = JCSystem.makeTransientByteArray((short) (Constants.ID_SIZE + Constants.DATE_SIZE + 1 + Constants.KEY_SIZE), JCSystem.CLEAR_ON_RESET);
 
         terminalPubKey = JCSystem.makeTransientObjectArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        terminalId = JCSystem.makeTransientByteArray(Constants.ID_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalCounter = JCSystem.makeTransientByteArray(Constants.COUNTER_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalType = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
@@ -66,6 +69,7 @@ public class PosCard extends Applet implements ISO7816 {
         mutualAuth = new MutualAuth(this);
         reload = new Reload(this);
         utils = new Utils(this);
+        block = new Block(this);
 
         signatureInstance = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 
@@ -121,6 +125,9 @@ public class PosCard extends Applet implements ISO7816 {
                 break;
             case (byte) 0x40:
                 buy(apdu);
+                break;
+            case (byte) 0x50:
+                block.block(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
