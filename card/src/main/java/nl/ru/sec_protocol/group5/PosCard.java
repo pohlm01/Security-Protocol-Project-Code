@@ -1,6 +1,5 @@
 package nl.ru.sec_protocol.group5;
 
-import com.sun.imageio.plugins.jpeg.JPEG;
 import javacard.framework.*;
 import javacard.security.*;
 
