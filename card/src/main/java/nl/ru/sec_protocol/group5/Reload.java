@@ -102,10 +102,11 @@ public class Reload {
 
         // increase card's balance
         Util.arrayCopy(applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), applet.amount, (short) 0, (short) 4);
-        applet.utils.increaseBalance(applet.amount);
+        Util.arrayCopy(applet.utils.byteArrayAddition(applet.balance, applet.amount), (short) 0, applet.balance, (short) 0, (short) 4);
 
         applet.state[0] = Constants.FINISHED;
 
-        apdu.setOutgoingAndSend((short) 0, (short) 0);
+        Util.arrayCopy(applet.balance, (short) 0, buffer, (short) 0, (short) 4);
+        apdu.setOutgoingAndSend((short) 0, (short) 4);
     }
 }

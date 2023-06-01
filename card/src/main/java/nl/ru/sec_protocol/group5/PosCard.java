@@ -1,6 +1,5 @@
 package nl.ru.sec_protocol.group5;
 
-import com.sun.imageio.plugins.jpeg.JPEG;
 import javacard.framework.*;
 import javacard.security.*;
 
@@ -35,10 +34,6 @@ public class PosCard extends Applet implements ISO7816 {
 
     protected final byte[] currentDate;
     protected byte[] amount;
-    protected short[] xA;
-    protected short[] xB;
-    protected short[] yA;
-    protected short[] yB;
 
 
     ////////// Helper objects ///////////
@@ -69,11 +64,10 @@ public class PosCard extends Applet implements ISO7816 {
         currentDate = JCSystem.makeTransientByteArray(Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
 
         amount = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
-        xA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        xB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        yA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        yB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-
+        Utils.X = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
+        Utils.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
+        Utils.addResult = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
+        Utils.B = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);

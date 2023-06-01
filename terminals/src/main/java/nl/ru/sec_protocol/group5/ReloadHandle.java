@@ -29,7 +29,7 @@ public class ReloadHandle extends Handle {
         var amount = scanner.nextInt();
         communicateAmount(channel, amount);
 
-        log_and_finalize(channel, amount);
+        finalizeReload(channel, amount);
     }
 
     /**
@@ -77,7 +77,7 @@ public class ReloadHandle extends Handle {
      * @param amount amount to increase the card's balance with
      * @author Bart Veldman
      */
-    private void log_and_finalize(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
+    private void finalizeReload(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
         // pretend we log the transaction here
 
         var data= new byte[COUNTER_SIZE + 4 + ID_SIZE];
@@ -95,6 +95,7 @@ public class ReloadHandle extends Handle {
             System.out.println("Reloading failed");
             System.exit(1);
         }
+        System.out.println(Arrays.toString(response.getData()));
         System.out.println("Card reload successful. Added " + amount + " to the card's balance");
     }
 
