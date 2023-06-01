@@ -45,10 +45,12 @@ public class ReloadHandle extends Handle {
         System.arraycopy(Utils.intToBytes(amount), 0, dataToSend, 0, 4);
 
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, dataToSend);
-        System.out.printf("sending amount: %s\n", apdu);
 
         var response = channel.transmit(apdu);
-        System.out.printf("response: %s\n", response);
+        if (response.getSW() != 0x9000) {
+            System.out.println("An error occurred while sending the amount: " + response.getSW());
+            System.exit(1);
+        }
 
         // create signature
         var data = new byte[COUNTER_SIZE + 4 + ID_SIZE];
@@ -61,13 +63,11 @@ public class ReloadHandle extends Handle {
 
         // send signature, receive and verify signature
         apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
-        System.out.printf("send amount signature: %s\n", apdu);
 
         response = channel.transmit(apdu);
-        System.out.printf("receive amount signature: %s\n", response);
 
         var signature_verified = verifySignature(response.getData(), amount);
-        System.out.printf("signatures verified: %s\n", signature_verified);
+        System.out.printf("amount verified: %s\n", signature_verified);
     }
 
     /**
@@ -89,7 +89,6 @@ public class ReloadHandle extends Handle {
         var signature_amount = Utils.sign(data, terminal.privKey);
 
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
-        System.out.printf("send finalizing signature: %s\n", apdu);
 
         var response = channel.transmit(apdu);
         if (response.getSW() != 0x9000) {
