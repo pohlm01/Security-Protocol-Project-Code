@@ -130,5 +130,7 @@ public class PosCard extends Applet implements ISO7816 {
 
     private void buy(APDU apdu) {
         //FIXME
+        //Adding here the calls to the functions that do Step 3,4,6,7,8,9. Majority can be used from Reload with small
+        //mods.
     }
 }
