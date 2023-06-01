@@ -127,7 +127,7 @@ public class PosCard extends Applet implements ISO7816 {
                 reload.receiveAmount(apdu);
                 break;
             case (byte) 0x30:
-                reload.verifyAmountAndSignature(apdu);
+                reload.verifyAmount(apdu);
                 break;
             case (byte) 0x32:
                 reload.finalizeReload(apdu);

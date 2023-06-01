@@ -67,7 +67,29 @@ public class Utils {
         Util.setShort(applet.balance, (short) 2, (short) (applet.xB[0] + applet.yB[0]));
     }
 
+    /**
+     * Subtraction operation on two byte arrays of length 4 (amount and balance)
+     * Please ensure that the amount is larger than the balance before calling this function as this is not checked
+     * Subtraction is performed by adding the negation of the amount (a - b = a + (-b))
+     *
+     * @param  amount amount to decrease the card's balance with
+     * @author Bart Veldman
+     */
     void decreaseBalance(byte[] amount){
-        // TODO
+        applet.xA[0] = Util.getShort(applet.balance, (short) 0);
+        applet.xB[0] = Util.getShort(applet.balance, (short) 2);
+        applet.yA[0] = (short) ~Util.getShort(amount, (short) 0);
+        applet.yB[0] = (short) ~Util.getShort(amount, (short) 2);
+
+        // increment the amount
+        applet.yB[0] = (short) (applet.yB[0] + 1);
+        applet.yA[0] = (short) (applet.yA[0] + (~applet.yB[0] == 0 ? 1 : 0));
+
+        // addition
+        Util.setShort(applet.balance, (short) 0, (short) (applet.xA[0] + applet.yA[0] + (
+                                                            applet.xB[0] < 0 && applet.yB[0] < 0 ||
+                                                            applet.xB[0] < 0 && applet.yB[0] >= (short) -applet.xB[0] ||
+                                                            applet.yB[0] < 0 && applet.xB[0] >= (short) -applet.yB[0] ? 1 : 0)));
+        Util.setShort(applet.balance, (short) 2, (short) (applet.xB[0] + applet.yB[0]));
     }
 }

@@ -44,7 +44,7 @@ public class Reload {
      * @param apdu incoming APDU
      * @author Bart Veldman
      */
-    void verifyAmountAndSignature(APDU apdu) {
+    void verifyAmount(APDU apdu) {
         if (applet.state[0] != Constants.RELOAD_AMOUNT_RECEIVED) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
