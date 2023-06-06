@@ -82,12 +82,15 @@ public class Utils {
      * @author Bart Veldman
      */
     void byteArraySubtraction(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY) {
+        // return an error is the result would be negative
+        if (Util.arrayCompare(arrayX, offsetX, arrayY, offsetY, (short) 4) < 0) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
         X[0] = Util.getShort(arrayX, offsetX);
         X[1] = Util.getShort(arrayX, (short) (2 + offsetX));
-        // inverse arrayY
+        // negate Y : inverse and increment
         Y[0] = (short) ~Util.getShort(arrayY, offsetY);
         Y[1] = (short) ~Util.getShort(arrayY, (short) (2 + offsetY));
-        // increment
         Y[0] = (short) (Y[0] + (~Y[1] == 0 ? 1 : 0));
         Y[1] = (short) (Y[1] + 1);
         shortArrayAddition(X, Y);

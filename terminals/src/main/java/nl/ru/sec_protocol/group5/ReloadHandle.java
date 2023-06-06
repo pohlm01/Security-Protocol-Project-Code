@@ -63,11 +63,12 @@ public class ReloadHandle extends Handle {
 
         // send signature, receive and verify signature
         apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
-
         response = channel.transmit(apdu);
 
-        var signature_verified = verifySignature(response.getData(), amount);
-        System.out.printf("amount verified: %s\n", signature_verified);
+        if (!verifySignature(response.getData(), amount)) {
+            System.out.println("An error occurred while verifying the amount");
+            System.exit(1);
+        }
     }
 
     /**

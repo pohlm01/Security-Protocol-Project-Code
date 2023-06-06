@@ -105,7 +105,6 @@ public class Reload {
 
         applet.state[0] = Constants.FINISHED;
 
-        Util.arrayCopy(applet.balance, (short) 0, buffer, (short) 0, (short) 4);
-        apdu.setOutgoingAndSend((short) 0, (short) 4);
+        apdu.setOutgoingAndSend((short) 0, (short) 0);
     }
 }
