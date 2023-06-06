@@ -22,6 +22,7 @@ import static nl.ru.sec_protocol.group5.Terminal.pubExponent;
 public class Utils {
     public final static int ID_SIZE = 4;
     public final static int COUNTER_SIZE = 4;
+    public final static int AMOUNT_SIZE = 4;
     public final static int DATE_SIZE = 3;
     public final static int KEY_SIZE = 256;
     public final static int SIGNATURE_SIZE = KEY_SIZE;
@@ -238,5 +239,18 @@ public class Utils {
         sig_object.update(signedData);
 
         return sig_object.verify(signature);
+    }
+
+    public static boolean verifyAmountSignature(byte[] signature, int amount, RSAPublicKey cardPubKey, int termId, int cardCounter, int cardId) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Signature sigObject = Signature.getInstance("SHA1withRSA");
+        sigObject.initVerify(cardPubKey);
+
+        sigObject.update(Utils.intToBytes(termId));
+        sigObject.update(Utils.intToBytes(cardCounter));
+        sigObject.update(Utils.intToBytes(amount));
+        sigObject.update(Utils.intToBytes(cardId));
+        sigObject.update(Utils.dateToBytes(LocalDate.now())); // TODO streamline this with mutual authentication (ensure this variable is equal to the one send earlier)
+
+        return sigObject.verify(signature);
     }
 }

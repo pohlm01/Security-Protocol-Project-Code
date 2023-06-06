@@ -60,7 +60,8 @@ public class Utils {
         Util.setShort(applet.balance, (short) 2, (short) (applet.xB[0] + applet.yB[0]));
     }
 
-    void decreaseBalance(byte[] amount){
-        // TODO
+    static void decreaseBalance(byte[] amount){
+        //applet.balance = applet.balance - amount;
+        //TODO finish
     }
 }

@@ -66,7 +66,7 @@ public class ReloadHandle extends Handle {
         response = channel.transmit(apdu);
         System.out.printf("receive amount signature: %s\n", response);
 
-        var signature_verified = verifySignature(response.getData(), amount);
+        var signature_verified = verifyAmountSignature(response.getData(), amount, cardPubKey, terminal.id, cardCounter, cardId);
         System.out.printf("signatures verified: %s\n", signature_verified);
     }
 
@@ -97,19 +97,5 @@ public class ReloadHandle extends Handle {
             System.exit(1);
         }
         System.out.println("Card reload successful. Added " + amount + " to the card's balance");
-    }
-
-    // TODO move this to utils
-    private boolean verifySignature(byte[] signature, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        Signature sig_object = Signature.getInstance("SHA1withRSA");
-        sig_object.initVerify(cardPubKey);
-
-        sig_object.update(Utils.intToBytes(terminal.id));
-        sig_object.update(Utils.intToBytes(cardCounter));
-        sig_object.update(Utils.intToBytes(amount));
-        sig_object.update(Utils.intToBytes(cardId));
-        sig_object.update(Utils.dateToBytes(LocalDate.now())); // TODO streamline this with mutual authentication (ensure this variable is equal to the one send earlier)
-
-        return sig_object.verify(signature);
     }
 }
