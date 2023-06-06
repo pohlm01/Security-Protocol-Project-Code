@@ -22,9 +22,6 @@ public class PosCard extends Applet implements ISO7816 {
     /////////  Transient part ////////////
     protected final byte[] state;
 
-    /**
-     * terminalId || expirationDate || terminalPubKey || domainSeparator
-     */
     protected final byte[] transientData;
 
     protected final Object[] terminalPubKey;
@@ -34,12 +31,6 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] terminalSignature;
 
     protected final byte[] currentDate;
-    protected byte[] amount;
-    protected short[] xA;
-    protected short[] xB;
-    protected short[] yA;
-    protected short[] yB;
-
 
     ////////// Helper objects ///////////
     private final Init init;
@@ -50,7 +41,7 @@ public class PosCard extends Applet implements ISO7816 {
     final Signature signatureInstance;
 
     PosCard() {
-        balance = new byte[]{0x00,0x00,0x00,0x00};
+        balance = new byte[]{0x00, 0x00, 0x00, 0x00};
         cardId = new byte[4];
         cardExpirationDate = new byte[3];
         cardSignature = new byte[2048 / 8];
@@ -69,13 +60,6 @@ public class PosCard extends Applet implements ISO7816 {
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
         currentDate = JCSystem.makeTransientByteArray(Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
-
-        amount = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
-        xA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        xB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        yA = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        yB = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_RESET);
-
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);
@@ -130,7 +114,7 @@ public class PosCard extends Applet implements ISO7816 {
                 reload.receiveAmount(apdu);
                 break;
             case (byte) 0x30:
-                reload.verifyAmountAndSignature(apdu);
+                reload.verifyAmount(apdu);
                 break;
             case (byte) 0x32:
                 reload.finalizeReload(apdu);

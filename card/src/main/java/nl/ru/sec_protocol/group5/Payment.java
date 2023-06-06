@@ -64,7 +64,7 @@ public class Payment {
 
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
-        Utils.decreaseBalance(applet.amount);
+        applet.utils.byteArraySubtraction(applet.balance, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE));
 
         applet.state[0] = Constants.FINISHED;
 

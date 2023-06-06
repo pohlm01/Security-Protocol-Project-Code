@@ -44,7 +44,7 @@ public class Reload {
      * @param apdu incoming APDU
      * @author Bart Veldman
      */
-    void verifyAmountAndSignature(APDU apdu) {
+    void verifyAmount(APDU apdu) {
         if (applet.state[0] != Constants.RELOAD_AMOUNT_RECEIVED) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
@@ -101,8 +101,7 @@ public class Reload {
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
         // increase card's balance
-        Util.arrayCopy(applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), applet.amount, (short) 0, (short) 4);
-        applet.utils.increaseBalance(applet.amount);
+        applet.utils.byteArrayAddition(applet.balance, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE));
 
         applet.state[0] = Constants.FINISHED;
 
