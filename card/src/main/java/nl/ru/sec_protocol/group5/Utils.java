@@ -2,6 +2,7 @@ package nl.ru.sec_protocol.group5;
 
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
@@ -10,13 +11,13 @@ import javacard.security.Signature;
 public class Utils {
     private final PosCard applet;
 
-    protected static short[] X;
-    protected static short[] Y;
-    protected static byte[] B;
-    protected static short[] addResult;
+    private final short[] X;
+    private final short[] Y;
 
     Utils(PosCard applet) {
         this.applet = applet;
+        this.X = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
+        this.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
     }
     void sign(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPrivateKey key) {
         applet.signatureInstance.init(key, Signature.MODE_SIGN);
@@ -48,48 +49,58 @@ public class Utils {
     }
 
     /**
-     * Addition operation on two byte arrays of length 4
-     * Casts the byte arrays to short arrays of length 2 and checks for overflow
+     * Int like addition operation on two byte arrays.
+     * Treats the four bytes, beginning from offset, as an int.
+     * <br>
+     * This is done by casting the byte arrays to short arrays of length 2 and checking for overflow.
      *
-     * @param arrayX byte array of length 4. Sum of both arrays will be returned here
-     * @param arrayY byte array of length 4
+     * @param arrayX byte array of <code>length >= offsetX + 4</code>. The Sum of both arrays will be returned here
+     * @param offsetX offset at which the int starts
+     * @param arrayY byte array of <code>length >= offsetY + 4</code>
+     * @param offsetY offset at which the int starts
      * @author Bart Veldman
      */
-    byte[] byteArrayAddition(byte[] arrayX, byte[] arrayY){
-        X[0] = Util.getShort(arrayX, (short) 0);
-        X[1] = Util.getShort(arrayX, (short) 2);
-        Y[0] = Util.getShort(arrayY, (short) 0);
-        Y[1] = Util.getShort(arrayY, (short) 2);
+    void byteArrayAddition(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY){
+        X[0] = Util.getShort(arrayX, offsetX);
+        X[1] = Util.getShort(arrayX, (short) (2 + offsetX));
+        Y[0] = Util.getShort(arrayY, offsetY);
+        Y[1] = Util.getShort(arrayY, (short) (2 + offsetY));
         shortArrayAddition(X, Y);
-        Util.setShort(B, (short) 0, addResult[0]);
-        Util.setShort(B, (short) 2, addResult[1]);
-        return B;
+        Util.setShort(arrayX, offsetX, X[0]);
+        Util.setShort(arrayX, (short) (2 + offsetX), X[1]);
     }
 
     /**
-     * Subtraction operation on two byte arrays of length 4
-     * Please ensure that Y is larger than X as this is not checked
-     * Subtraction performed by adding the negation of Y (x - y = x + (-y))
+     * Int like subtraction operation on two byte arrays.
+     * Treats the four bytes, beginning from offset, as an int.
+     * Subtraction is performed by adding the negation of Y (x - y = x + (-y))
      *
-     * @param arrayX byte array of length 4
-     * @param arrayY byte array of length 4
+     * @param arrayX byte array of <code>length >= offsetX + 4</code>. <code>arrayX - arrayY</code> will be returned here.
+     * @param offsetX offset at which the int starts
+     * @param arrayY byte array of <code>length >= offsetY + 4</code>
+     * @param offsetY offset at which the int starts
      * @author Bart Veldman
      */
-    byte[] byteArraySubtraction(byte[] arrayX, byte[] arrayY) {
-        X[0] = Util.getShort(arrayX, (short) 0);
-        X[1] = Util.getShort(arrayX, (short) 2);
+    void byteArraySubtraction(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY) {
+        X[0] = Util.getShort(arrayX, offsetX);
+        X[1] = Util.getShort(arrayX, (short) (2 + offsetX));
         // inverse arrayY
-        Y[0] = (short) ~Util.getShort(arrayY, (short) 0);
-        Y[1] = (short) ~Util.getShort(arrayY, (short) 2);
+        Y[0] = (short) ~Util.getShort(arrayY, offsetY);
+        Y[1] = (short) ~Util.getShort(arrayY, (short) (2 + offsetY));
         // increment
         Y[0] = (short) (Y[0] + (~Y[1] == 0 ? 1 : 0));
         Y[1] = (short) (Y[1] + 1);
         shortArrayAddition(X, Y);
-        Util.setShort(B, (short) 0, addResult[0]);
-        Util.setShort(B, (short) 2, addResult[1]);
-        return B;
+        Util.setShort(arrayX, offsetX, X[0]);
+        Util.setShort(arrayX, (short) (2 + offsetX), X[1]);
     }
 
+    /** In place addition of two short arrays with length 2, each array treated as one int
+     *
+     * @param x short array of length 2. Will contain the result afterward
+     * @param y short array of length 2
+     * @author Bart Veldman
+     */
     void shortArrayAddition(short[] x, short[] y){
         /* 3 conditions where we have a carrier bit:
           - both are negative (signed short, so the first bit will be a 1)
@@ -97,10 +108,10 @@ public class Utils {
           - vice versa
           source: https://stackoverflow.com/questions/74383478/how-to-get-the-value-of-the-carry-bit-when-adding-two-shorts-in-java
         */
-        addResult[0] = (short) (x[0] + y[0] + (
+        x[0] = (short) (x[0] + y[0] + (
                         x[1] < 0 && y[1] < 0 ||
                         x[1] < 0 && y[1] >= (short) -x[1] ||
                         y[1] < 0 && x[1] >= (short) -y[1] ? 1 : 0));
-        addResult[1] = (short) (x[1] + y[1]);
+        x[1] = (short) (x[1] + y[1]);
     }
 }

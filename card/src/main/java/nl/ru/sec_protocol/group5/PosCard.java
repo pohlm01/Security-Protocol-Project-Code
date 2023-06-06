@@ -22,9 +22,6 @@ public class PosCard extends Applet implements ISO7816 {
     /////////  Transient part ////////////
     protected final byte[] state;
 
-    /**
-     * terminalId || expirationDate || terminalPubKey || domainSeparator
-     */
     protected final byte[] transientData;
 
     protected final Object[] terminalPubKey;
@@ -33,8 +30,6 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] terminalSignature;
 
     protected final byte[] currentDate;
-    protected byte[] amount;
-
 
     ////////// Helper objects ///////////
     private final Init init;
@@ -44,7 +39,7 @@ public class PosCard extends Applet implements ISO7816 {
     final Signature signatureInstance;
 
     PosCard() {
-        balance = new byte[]{0x00,0x00,0x00,0x00};
+        balance = new byte[]{0x00, 0x00, 0x00, 0x00};
         cardId = new byte[4];
         cardExpirationDate = new byte[3];
         cardSignature = new byte[2048 / 8];
@@ -62,12 +57,6 @@ public class PosCard extends Applet implements ISO7816 {
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
         currentDate = JCSystem.makeTransientByteArray(Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
-
-        amount = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
-        Utils.X = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
-        Utils.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
-        Utils.addResult = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
-        Utils.B = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_RESET);
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);
