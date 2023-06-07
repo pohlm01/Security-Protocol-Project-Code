@@ -21,8 +21,7 @@ public class Constants {
     public final static byte PUB_KEYS_EXCHANGED = 2;
     public final static byte TERMINAL_PASSIVELY_AUTHENTICATED = 3;
     public final static byte TERMINAL_ACTIVELY_AUTHENTICATED = 4;
-    public final static byte RELOAD_AMOUNT_RECEIVED = 5;
+    public final static byte AMOUNT_RECEIVED = 5;
     public final static byte RELOAD_AMOUNT_AUTHENTICATED = 6;
-    public final static byte POS_AMOUNT_RECEIVED = 7;
-    public final static byte FINISHED = 8;
+    public final static byte FINISHED = 7;
 }

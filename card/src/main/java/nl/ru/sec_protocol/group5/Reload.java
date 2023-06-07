@@ -14,30 +14,6 @@ public class Reload {
     }
 
     /**
-     * Receive the amount with which to increase the card's balance.
-     * Checks if the amount is positive and stores it in transientData.
-     *
-     * @param apdu incoming APDU
-     * @author Bart Veldman
-     */
-    void receiveAmount(APDU apdu) {
-        if (applet.state[0] != Constants.TERMINAL_ACTIVELY_AUTHENTICATED) {
-            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-        }
-
-        byte[] buffer = apdu.getBuffer();
-
-        // Return an error if the amount is negative
-        if (Util.arrayCompare(buffer, (short) 0, Constants.ZERO, (short) 0, (short) 4) < 0) {
-            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-        }
-        // terminal ID || 4 bytes for counter || amount
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), (short) 4);
-
-        applet.state[0] = Constants.RELOAD_AMOUNT_RECEIVED;
-    }
-
-    /**
      * Receives a signature over the amount signed by the terminal.
      * Sends back a signature over the time stamp, counter, amount, and both IDs to be used for non-repudiation.
      *
@@ -45,25 +21,13 @@ public class Reload {
      * @author Bart Veldman
      */
     void verifyAmount(APDU apdu) {
-        if (applet.state[0] != Constants.RELOAD_AMOUNT_RECEIVED) {
+        if (applet.state[0] != Constants.AMOUNT_RECEIVED && applet.terminalType[0] == Constants.TERMINAL_TYPE_RELOAD) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
         byte[] buffer = apdu.getBuffer();
 
-        applet.cardCounter += 1;
-
-        // verify signature
-        applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
-
-        // terminal ID || card counter || amount || card ID
-        // the terminal ID should already be present, because it was written to transient data in the last step of the mutual auth
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.ID_SIZE);
-        // The amount is written at the correct place during `receiveAmount`
-        Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4), Constants.ID_SIZE);
-
-        applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
+        applet.utils.verifyAmountSignature(buffer);
 
         applet.state[0] = Constants.RELOAD_AMOUNT_AUTHENTICATED;
 

@@ -233,12 +233,12 @@ public class Utils {
      * @author Maximilian Pohl
      */
     private static boolean verifySignature(byte[] signature, byte[] signedData, RSAPublicKey publicKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        Signature sig_object = Signature.getInstance("SHA1withRSA");
-        sig_object.initVerify(publicKey);
+        Signature sigObject = Signature.getInstance("SHA1withRSA");
+        sigObject.initVerify(publicKey);
 
-        sig_object.update(signedData);
+        sigObject.update(signedData);
 
-        return sig_object.verify(signature);
+        return sigObject.verify(signature);
     }
 
     public static boolean verifyAmountSignature(byte[] signature, int amount, RSAPublicKey cardPubKey, int termId, int cardCounter, int cardId) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
@@ -249,7 +249,7 @@ public class Utils {
         sigObject.update(Utils.intToBytes(cardCounter));
         sigObject.update(Utils.intToBytes(amount));
         sigObject.update(Utils.intToBytes(cardId));
-        sigObject.update(Utils.dateToBytes(LocalDate.now())); // TODO streamline this with mutual authentication (ensure this variable is equal to the one send earlier)
+        sigObject.update(Utils.dateToBytes(LocalDate.now())); // TODO make sure this is the same date as in the beginning of the protocol
 
         return sigObject.verify(signature);
     }

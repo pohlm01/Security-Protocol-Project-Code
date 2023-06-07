@@ -36,6 +36,7 @@ public class PosCard extends Applet implements ISO7816 {
     private final Init init;
     private final MutualAuth mutualAuth;
     private final Reload reload;
+    private final Payment payment;
     private final Block block;
     final Utils utils;
     final Signature signatureInstance;
@@ -64,8 +65,9 @@ public class PosCard extends Applet implements ISO7816 {
         init = new Init(this);
         mutualAuth = new MutualAuth(this);
         reload = new Reload(this);
-        utils = new Utils(this);
+        payment = new Payment(this);
         block = new Block(this);
+        utils = new Utils(this);
 
         signatureInstance = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 
@@ -111,7 +113,7 @@ public class PosCard extends Applet implements ISO7816 {
                 mutualAuth.activeAuthentication(apdu);
                 break;
             case (byte) 0x28:
-                reload.receiveAmount(apdu);
+                utils.receiveAmount(apdu);
                 break;
             case (byte) 0x30:
                 reload.verifyAmount(apdu);
@@ -119,8 +121,8 @@ public class PosCard extends Applet implements ISO7816 {
             case (byte) 0x32:
                 reload.finalizeReload(apdu);
                 break;
-            case (byte) 0x40:
-                buy(apdu);
+            case (byte) 0x42:
+                payment.verifyAmount(apdu);
                 break;
             case (byte) 0x50:
                 block.block(apdu);
@@ -128,12 +130,5 @@ public class PosCard extends Applet implements ISO7816 {
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
-    }
-
-
-    private void buy(APDU apdu) {
-        //FIXME
-        //Adding here the calls to the functions that do Step 3,4,6,7,8,9. Majority can be used from Reload with small
-        //mods.
     }
 }

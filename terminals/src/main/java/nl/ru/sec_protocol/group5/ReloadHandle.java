@@ -6,10 +6,8 @@ import javax.smartcardio.CommandAPDU;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -41,10 +39,7 @@ public class ReloadHandle extends Handle {
      */
     private void communicateAmount(CardChannel channel, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // send amount
-        var dataToSend = new byte[4];
-        System.arraycopy(Utils.intToBytes(amount), 0, dataToSend, 0, 4);
-
-        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, dataToSend);
+        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, Utils.intToBytes(amount));
 
         var response = channel.transmit(apdu);
         if (response.getSW() != 0x9000) {
@@ -59,13 +54,13 @@ public class ReloadHandle extends Handle {
         System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
         System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + 4, ID_SIZE);
 
-        var signature_amount = Utils.sign(data, terminal.privKey);
+        var signatureAmount = Utils.sign(data, terminal.privKey);
 
         // send signature, receive and verify signature
-        apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
+        apdu = new CommandAPDU((byte) 0x00, SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         response = channel.transmit(apdu);
 
-        if (!verifySignature(response.getData(), amount)) {
+        if (!verifyAmountSignature(response.getData(), amount, cardPubKey, terminal.id, cardCounter, cardId)) {
             System.out.println("An error occurred while verifying the amount");
             System.exit(1);
         }
@@ -81,15 +76,15 @@ public class ReloadHandle extends Handle {
     private void finalizeReload(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
         // pretend we log the transaction here
 
-        var data= new byte[COUNTER_SIZE + 4 + ID_SIZE];
+        var data= new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
-        System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
-        System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + 4, ID_SIZE);
+        System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, AMOUNT_SIZE);
+        System.arraycopy(Utils.intToBytes(cardId), 0, data, COUNTER_SIZE + AMOUNT_SIZE, ID_SIZE);
 
-        var signature_amount = Utils.sign(data, terminal.privKey);
+        var signatureAmount = Utils.sign(data, terminal.privKey);
 
-        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signature_amount[0], (byte) 0x00, signature_amount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
+        var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1);
 
         var response = channel.transmit(apdu);
         if (response.getSW() != 0x9000) {
