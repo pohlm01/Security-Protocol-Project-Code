@@ -84,11 +84,13 @@ public class Backend {
 
         try (RandomAccessFile crl = new RandomAccessFile("CRL", "rw")) {
             crl.write(expirationDate.toString().getBytes());
-            crl.write('\n');
             var dataToSign = new byte[(int) crl.length()];
+            crl.seek(0);
             crl.read(dataToSign);
             var signature = Utils.sign(dataToSign, backendPrivKey);
             var encodedSignature = Base64.getEncoder().encode(signature);
+            crl.seek(dataToSign.length);
+            crl.write('\n');
             crl.write(encodedSignature);
             System.out.println("Created empty CRL");
         } catch (Exception e) {
