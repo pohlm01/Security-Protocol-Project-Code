@@ -41,8 +41,9 @@ public class Block {
 
         Util.arrayCopy(applet.terminalId, (short) 0, applet.transientData, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.ID_SIZE, Constants.ID_SIZE);
+        Util.arrayCopy(applet.terminalExpirationDate, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.ID_SIZE), Constants.DATE_SIZE);
 
-        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.COUNTER_SIZE + Constants.ID_SIZE), buffer, (short) 0, applet.cardPrivKey);
+        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.COUNTER_SIZE + Constants.ID_SIZE + Constants.DATE_SIZE), buffer, (short) 0, applet.cardPrivKey);
         apdu.setOutgoingAndSend((short) 0, Constants.SIGNATURE_SIZE);
     }
 }

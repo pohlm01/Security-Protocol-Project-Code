@@ -29,15 +29,6 @@ public class Utils {
         }
     }
 
-    void verifyTerminalSignature(byte domainSeparator) {
-        applet.transientData[Constants.OFFSET_DOMAIN_SEPARATOR] = domainSeparator;
-
-        applet.signatureInstance.init(applet.backendPubKey, Signature.MODE_VERIFY);
-        boolean valid = applet.signatureInstance.verify(applet.transientData, (short) 0, (short) applet.transientData.length, applet.terminalSignature, (short) 0, Constants.SIGNATURE_SIZE);
-        if (!valid) {
-            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-        }
-    }
 
     /**
      * Receive the amount with which to increase the card's balance.
@@ -54,6 +45,7 @@ public class Utils {
         byte[] buffer = apdu.getBuffer();
 
         // Return an error if the amount is negative
+        // FIXME Do we need this? Don't we interpret everything as unsigned anyway?
         if (Util.arrayCompare(buffer, (short) 0, Constants.ZERO, (short) 0, (short) 4) < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }

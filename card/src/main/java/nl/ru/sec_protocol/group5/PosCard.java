@@ -28,6 +28,7 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] terminalId;
     protected final byte[] terminalCounter;
     protected final byte[] terminalType;
+    protected final byte[] terminalExpirationDate;
     protected final byte[] terminalSignature;
 
     protected final byte[] currentDate;
@@ -58,6 +59,7 @@ public class PosCard extends Applet implements ISO7816 {
         terminalId = JCSystem.makeTransientByteArray(Constants.ID_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalCounter = JCSystem.makeTransientByteArray(Constants.COUNTER_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalType = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
+        terminalExpirationDate = JCSystem.makeTransientByteArray((short) Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
         currentDate = JCSystem.makeTransientByteArray(Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);

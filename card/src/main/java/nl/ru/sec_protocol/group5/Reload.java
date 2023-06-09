@@ -69,6 +69,8 @@ public class Reload {
 
         applet.state[0] = Constants.FINISHED;
 
-        apdu.setOutgoingAndSend((short) 0, (short) 0);
+        Util.arrayCopy(applet.balance, (short) 0, buffer, (short) 0, Constants.AMOUNT_SIZE);
+
+        apdu.setOutgoingAndSend((short) 0, (short) Constants.AMOUNT_SIZE);
     }
 }
