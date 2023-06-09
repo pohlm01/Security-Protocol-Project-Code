@@ -16,6 +16,7 @@ public class Utils {
         this.X = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
         this.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
     }
+
     void sign(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPrivateKey key) {
         applet.signatureInstance.init(key, Signature.MODE_SIGN);
         applet.signatureInstance.sign(data, offset_data, data_length, sig, offset_sig);
@@ -83,13 +84,13 @@ public class Utils {
      * <br>
      * This is done by casting the byte arrays to short arrays of length 2 and checking for overflow.
      *
-     * @param arrayX byte array of <code>length >= offsetX + 4</code>. The Sum of both arrays will be returned here
+     * @param arrayX  byte array of <code>length >= offsetX + 4</code>. The Sum of both arrays will be returned here
      * @param offsetX offset at which the int starts
-     * @param arrayY byte array of <code>length >= offsetY + 4</code>
+     * @param arrayY  byte array of <code>length >= offsetY + 4</code>
      * @param offsetY offset at which the int starts
      * @author Bart Veldman
      */
-    void byteArrayAddition(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY){
+    void byteArrayAddition(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY) {
         X[0] = Util.getShort(arrayX, offsetX);
         X[1] = Util.getShort(arrayX, (short) (2 + offsetX));
         Y[0] = Util.getShort(arrayY, offsetY);
@@ -104,16 +105,16 @@ public class Utils {
      * Treats the four bytes, beginning from offset, as an int.
      * Subtraction is performed by adding the negation of Y (x - y = x + (-y))
      *
-     * @param arrayX byte array of <code>length >= offsetX + 4</code>. <code>arrayX - arrayY</code> will be returned here.
+     * @param arrayX  byte array of <code>length >= offsetX + 4</code>. <code>arrayX - arrayY</code> will be returned here.
      * @param offsetX offset at which the int starts
-     * @param arrayY byte array of <code>length >= offsetY + 4</code>
+     * @param arrayY  byte array of <code>length >= offsetY + 4</code>
      * @param offsetY offset at which the int starts
      * @author Bart Veldman
      */
     void byteArraySubtraction(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY) {
         // return an error if the result would be negative
         // FIXME does not work if balance byte is 'negative' in Java's opinion
-        if (Util.arrayCompare(arrayX, offsetX, arrayY, offsetY, (short) 4) < 0) {
+        if (bitArrayCompare(arrayX, offsetX, arrayY, offsetY, (short) 4) < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         X[0] = Util.getShort(arrayX, offsetX);
@@ -128,13 +129,14 @@ public class Utils {
         Util.setShort(arrayX, (short) (2 + offsetX), X[1]);
     }
 
-    /** In place addition of two short arrays with length 2, each array treated as one int
+    /**
+     * In place addition of two short arrays with length 2, each array treated as one int
      *
      * @param x short array of length 2. Will contain the result afterward
      * @param y short array of length 2
      * @author Bart Veldman
      */
-    void shortArrayAddition(short[] x, short[] y){
+    void shortArrayAddition(short[] x, short[] y) {
         /* 3 conditions where we have a carrier bit:
           - both are negative (signed short, so the first bit will be a 1)
           - one side (a) is negative and the other side (b) is larger than the negation of a. The sum must be >= 2^16 so there is overflow
@@ -142,9 +144,26 @@ public class Utils {
           source: https://stackoverflow.com/questions/74383478/how-to-get-the-value-of-the-carry-bit-when-adding-two-shorts-in-java
         */
         x[0] = (short) (x[0] + y[0] + (
-                        x[1] < 0 && y[1] < 0 ||
+                x[1] < 0 && y[1] < 0 ||
                         x[1] < 0 && y[1] >= (short) -x[1] ||
                         y[1] < 0 && x[1] >= (short) -y[1] ? 1 : 0));
         x[1] = (short) (x[1] + y[1]);
+    }
+
+    /**
+     * Compares the given arrays from their offsets for the given length in bytes bitwise.
+     *
+     * @return 0 if the arrays are identical, -1 if arrA firstly has a 0 at a place arrB has a 0 otherwise.
+     * @author Maximilian Pohl
+     */
+    private short bitArrayCompare(byte[] arrA, short offA, byte[] arrB, short offB, short length) {
+        for (short i = 0; i < length; i++) {
+            if ((arrA[(short) (offA + i)] & 0x00FF) < (arrB[(short) (offB + i)] & 0x00FF)) {
+                return -1;
+            } else if ((arrA[(short) (offA + i)] & 0x00FF) > (arrB[(short) (offB + i)] & 0x00FF)) {
+                return 1;
+            }
+        }
+        return 0;
     }
 }

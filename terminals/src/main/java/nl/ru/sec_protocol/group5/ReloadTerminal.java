@@ -4,11 +4,7 @@ import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.*;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
 
@@ -20,7 +16,7 @@ public class ReloadTerminal extends Terminal {
     }
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
-        ReloadTerminal reloadTerminal = new ReloadTerminal(12345, LocalDate.of(2023, 6, 1));
+        ReloadTerminal reloadTerminal = new ReloadTerminal(12345, LocalDate.of(2023, 7, 1));
         reloadTerminal.start();
     }
 
