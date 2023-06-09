@@ -22,6 +22,7 @@ import static nl.ru.sec_protocol.group5.Terminal.pubExponent;
 public class Utils {
     public final static int ID_SIZE = 4;
     public final static int COUNTER_SIZE = 4;
+    public final static int AMOUNT_SIZE = 4;
     public final static int DATE_SIZE = 3;
     public final static int KEY_SIZE = 256;
     public final static int SIGNATURE_SIZE = KEY_SIZE;
@@ -232,11 +233,24 @@ public class Utils {
      * @author Maximilian Pohl
      */
     private static boolean verifySignature(byte[] signature, byte[] signedData, RSAPublicKey publicKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        Signature sig_object = Signature.getInstance("SHA1withRSA");
-        sig_object.initVerify(publicKey);
+        Signature sigObject = Signature.getInstance("SHA1withRSA");
+        sigObject.initVerify(publicKey);
 
-        sig_object.update(signedData);
+        sigObject.update(signedData);
 
-        return sig_object.verify(signature);
+        return sigObject.verify(signature);
+    }
+
+    public static boolean verifyAmountSignature(byte[] signature, int amount, RSAPublicKey cardPubKey, int termId, int cardCounter, int cardId) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        Signature sigObject = Signature.getInstance("SHA1withRSA");
+        sigObject.initVerify(cardPubKey);
+
+        sigObject.update(Utils.intToBytes(termId));
+        sigObject.update(Utils.intToBytes(cardCounter));
+        sigObject.update(Utils.intToBytes(amount));
+        sigObject.update(Utils.intToBytes(cardId));
+        sigObject.update(Utils.dateToBytes(LocalDate.now())); // TODO make sure this is the same date as in the beginning of the protocol
+
+        return sigObject.verify(signature);
     }
 }

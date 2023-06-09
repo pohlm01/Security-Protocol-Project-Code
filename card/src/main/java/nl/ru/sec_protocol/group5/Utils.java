@@ -1,9 +1,6 @@
 package nl.ru.sec_protocol.group5;
 
-import javacard.framework.ISO7816;
-import javacard.framework.ISOException;
-import javacard.framework.JCSystem;
-import javacard.framework.Util;
+import javacard.framework.*;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
 import javacard.security.Signature;
@@ -40,6 +37,46 @@ public class Utils {
         if (!valid) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
+    }
+
+    /**
+     * Receive the amount with which to increase the card's balance.
+     * Checks if the amount is positive and stores it in transientData.
+     *
+     * @param apdu incoming APDU
+     * @author Bart Veldman
+     */
+    void receiveAmount(APDU apdu) {
+        if (applet.state[0] != Constants.TERMINAL_ACTIVELY_AUTHENTICATED) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+
+        byte[] buffer = apdu.getBuffer();
+
+        // Return an error if the amount is negative
+        if (Util.arrayCompare(buffer, (short) 0, Constants.ZERO, (short) 0, (short) 4) < 0) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        // terminal ID || 4 bytes for counter || amount
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), (short) 4);
+
+        applet.state[0] = Constants.AMOUNT_RECEIVED;
+    }
+
+    void verifyAmountSignature(byte[] buffer) {
+        applet.cardCounter += 1;
+
+        // verify signature
+        applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
+
+        // terminal ID || card counter || amount || card ID
+        // the terminal ID should already be present, because it was written to transient data in the last step of the mutual auth
+        Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.ID_SIZE);
+        // The amount is written at the correct place during `receiveAmount`
+        Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4), Constants.ID_SIZE);
+
+        applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
     }
 
     static void counterAsBytes(short counter, byte[] buffer, short startIndex) {
@@ -82,7 +119,8 @@ public class Utils {
      * @author Bart Veldman
      */
     void byteArraySubtraction(byte[] arrayX, short offsetX, byte[] arrayY, short offsetY) {
-        // return an error is the result would be negative
+        // return an error if the result would be negative
+        // FIXME does not work if balance byte is 'negative' in Java's opinion
         if (Util.arrayCompare(arrayX, offsetX, arrayY, offsetY, (short) 4) < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }

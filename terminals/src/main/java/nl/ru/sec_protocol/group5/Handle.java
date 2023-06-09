@@ -22,8 +22,9 @@ public abstract class Handle {
     protected final static byte SEND_BACKEND_SIGNATURE_APDU_INS = 0x24;
     protected final static byte SEND_CHALLENGE_SIGNATURE_APDU_INS = 0x26;
     protected final static byte SEND_AMOUNT_APDU_INS = 0x28;
-    protected final static byte SEND_AMOUNT_SIGNATURE_APDU_INS = 0x30;
+    protected final static byte SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS = 0x30;
     protected final static byte SEND_AMOUNT_LOG_SIGNATURE_APDU_INS = 0x32;
+    protected final static byte SEND_PAYMENT_AMOUNT_SIGNATURE_APDU_INS = 0x42;
     private final static byte SEND_CARD_BLOCK_INS = 0x50;
 
     protected final static byte TERMINAL_TYPE_POS = 0x02;
