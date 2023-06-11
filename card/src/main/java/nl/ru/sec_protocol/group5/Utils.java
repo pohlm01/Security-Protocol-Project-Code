@@ -47,7 +47,10 @@ public class Utils {
 
         // Return an error if the amount is negative
         // FIXME Do we need this? Don't we interpret everything as unsigned anyway?
-        if (Util.arrayCompare(buffer, (short) 0, Constants.ZERO, (short) 0, (short) 4) < 0) {
+        // Yes and yes!
+        // TODO test
+        X[0] = Util.getShort(buffer, (short) 0);
+        if (X[0] < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         // terminal ID || 4 bytes for counter || amount
