@@ -59,7 +59,7 @@ public class ReloadHandle extends Handle {
         apdu = new CommandAPDU((byte) 0x00, SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         response = channel.transmit(apdu);
 
-        if (!verifyAmountSignature(response.getData(), amount, cardPubKey, terminal.id, cardCounter, cardId)) {
+        if (!verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, terminal.timeStamp, cardPubKey)) {
             System.out.println("An error occurred while verifying the amount");
             System.exit(1);
         }

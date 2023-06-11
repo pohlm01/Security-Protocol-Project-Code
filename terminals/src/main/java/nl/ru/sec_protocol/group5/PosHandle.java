@@ -57,7 +57,7 @@ public class PosHandle extends Handle {
         System.out.printf("receive amount signature: %s\n", response);
 
         // Step 11 verify signature
-        var signatureVerified = verifyAmountSignature(response.getData(), amount, cardPubKey, terminal.id, cardCounter, cardId);
+        var signatureVerified = verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, terminal.timeStamp, cardPubKey);
         System.out.printf("signatures verified: %s\n", signatureVerified);
 
         //TODO log

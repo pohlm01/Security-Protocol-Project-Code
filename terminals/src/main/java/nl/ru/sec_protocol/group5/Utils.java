@@ -241,7 +241,20 @@ public class Utils {
         return sigObject.verify(signature);
     }
 
-    public static boolean verifyAmountSignature(byte[] signature, int amount, RSAPublicKey cardPubKey, int termId, int cardCounter, int cardId) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    /**
+     * specific method to verify signature used in reload and payment protocol
+     *
+     * @param signature byte array containing the signature
+     * @param termId data that should have been signed
+     * @param cardCounter public key corresponding to the private key the data have been signed with
+     * @param amount amount to be added or deducted from the card's balance
+     * @param cardId id of the card
+     * @param timeStamp time stamp set during mutual authentication
+     * @param cardPubKey public key of the card
+     * @return true if the signature is valid, false otherwise
+     * @author Bart Veldman
+     */
+    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, LocalDate timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sigObject = Signature.getInstance("SHA1withRSA");
         sigObject.initVerify(cardPubKey);
 
@@ -249,7 +262,7 @@ public class Utils {
         sigObject.update(Utils.intToBytes(cardCounter));
         sigObject.update(Utils.intToBytes(amount));
         sigObject.update(Utils.intToBytes(cardId));
-        sigObject.update(Utils.dateToBytes(LocalDate.now())); // TODO make sure this is the same date as in the beginning of the protocol
+        sigObject.update(Utils.dateToBytes(timeStamp));
 
         return sigObject.verify(signature);
     }
