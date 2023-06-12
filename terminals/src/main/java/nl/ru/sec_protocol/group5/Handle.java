@@ -34,6 +34,8 @@ public abstract class Handle {
     protected LocalDate cardExpirationDate;
     protected RSAPublicKey cardPubKey;
 
+
+    LocalDate timeStamp;
     protected final Terminal terminal;
 
     public Handle(Terminal terminal) {
@@ -80,8 +82,8 @@ public abstract class Handle {
         System.arraycopy(Utils.intToBytes(terminal.id), 0, dataToSend, 0, ID_SIZE);
         System.arraycopy(Utils.dateToBytes(terminal.expirationDate), 0, dataToSend, ID_SIZE, DATE_SIZE);
         System.arraycopy(Utils.intToBytes(terminal.counter), 0, dataToSend, ID_SIZE + DATE_SIZE, 4);
-        terminal.timeStamp = LocalDate.now();
-        System.arraycopy(Utils.dateToBytes(terminal.timeStamp), 0, dataToSend, ID_SIZE + DATE_SIZE + 4, DATE_SIZE);
+        timeStamp = LocalDate.now();
+        System.arraycopy(Utils.dateToBytes(timeStamp), 0, dataToSend, ID_SIZE + DATE_SIZE + 4, DATE_SIZE);
 
         var apdu = new CommandAPDU((byte) 0x00, SEND_ID_DATE_COUNTER_APDU_INS, (byte) 0x00, (byte) 0x00, dataToSend);
         System.out.printf("sending terminalId, expirationDate, counter, and timestamp: %s\n", apdu);

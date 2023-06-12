@@ -29,7 +29,6 @@ public abstract class Terminal {
     final RSAPublicKey pubKey;
     final RSAPrivateKey privKey;
     final byte[] signature;
-    LocalDate timeStamp;
 
     public static final BigInteger pubExponent = new BigInteger("65537");
     private static final byte[] aid = new byte[]{0x2D, 0x54, 0x45, 0x53, 0x54, 0x70};
