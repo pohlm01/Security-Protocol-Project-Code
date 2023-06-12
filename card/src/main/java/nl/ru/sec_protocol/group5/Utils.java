@@ -46,10 +46,7 @@ public class Utils {
         byte[] buffer = apdu.getBuffer();
 
         // Return an error if the amount is negative
-        // FIXME Do we need this? Don't we interpret everything as unsigned anyway?
-        // Yes and yes!
-        // TODO test
-        X[0] = Util.getShort(buffer, (short) 0);
+        X[0] = Util.getShort(buffer, ISO7816.OFFSET_CDATA);
         if (X[0] < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
