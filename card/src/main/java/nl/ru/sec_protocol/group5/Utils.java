@@ -30,6 +30,21 @@ public class Utils {
         }
     }
 
+    /**
+     * Check for overflow. Blocks the card if the counter has reached its maximum value.
+     * Otherwise, increments the counter.
+     *
+     * @param counter counter
+     * @author Bart Veldman
+     */
+    void incrementCounter(byte[] counter) {
+        // Block when counter is about to overflow
+        if (Util.arrayCompare(counter, (short) 0, Constants.MAX, (short) 0, Constants.COUNTER_SIZE) == 0) {
+            applet.blocked = true;
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        byteArrayAddition(counter, (short) 0, Constants.ONE, (short) 0);
+    }
 
     /**
      * Receive the amount with which to increase the card's balance.
@@ -57,7 +72,7 @@ public class Utils {
     }
 
     void verifyAmountSignature(byte[] buffer) {
-        applet.cardCounter += 1;
+        incrementCounter(applet.cardCounter);
 
         // verify signature
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
@@ -65,17 +80,11 @@ public class Utils {
 
         // terminal ID || card counter || amount || card ID
         // the terminal ID should already be present, because it was written to transient data in the last step of the mutual auth
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.ID_SIZE);
+        Util.arrayCopy(applet.cardCounter, (short) 0, applet.transientData, Constants.ID_SIZE, Constants.COUNTER_SIZE);
         // The amount is written at the correct place during `receiveAmount`
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4), Constants.ID_SIZE);
 
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
-    }
-
-    static void counterAsBytes(short counter, byte[] buffer, short startIndex) {
-        buffer[startIndex] = 0x00;
-        buffer[(short) (startIndex + 1)] = 0x00;
-        Util.setShort(buffer, (short) (startIndex + 2), counter);
     }
 
     /**

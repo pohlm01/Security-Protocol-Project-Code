@@ -10,7 +10,7 @@ public class PosCard extends Applet implements ISO7816 {
     protected final byte[] cardExpirationDate; // [day, month, year(three last digits, using 2000 as base year)]
     protected final byte[] cardSignature;
 
-    protected short cardCounter;
+    protected byte[] cardCounter;
 
     protected javacard.security.RSAPrivateKey cardPrivKey;
     protected javacard.security.RSAPublicKey cardPubKey;
@@ -50,7 +50,7 @@ public class PosCard extends Applet implements ISO7816 {
         blocked = false;
         initialized = false;
 
-        cardCounter = 0;
+        cardCounter = new byte[]{0x00, 0x00, 0x00, 0x00};
 
         state = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
         transientData = JCSystem.makeTransientByteArray((short) (Constants.ID_SIZE + Constants.DATE_SIZE + 1 + Constants.KEY_SIZE), JCSystem.CLEAR_ON_RESET);

@@ -1,5 +1,6 @@
 package nl.ru.sec_protocol.group5;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import javacard.framework.APDU;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
@@ -53,14 +54,14 @@ public class Reload {
 
         byte[] buffer = apdu.getBuffer();
 
-        applet.cardCounter += 1;
+        applet.utils.incrementCounter(applet.cardCounter);
 
         // verify signature
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
         // terminal ID || card counter || amount || card ID || time stamp
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.ID_SIZE);
+        Util.arrayCopy(applet.cardCounter, (short) 0, applet.transientData, Constants.ID_SIZE, Constants.COUNTER_SIZE);
 
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
