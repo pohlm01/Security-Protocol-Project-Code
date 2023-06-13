@@ -2,7 +2,7 @@ package nl.ru.sec_protocol.group5;
 
 public class Constants {
     public final static byte[] PUBLIC_EXPONENT = new byte[]{0x01, 0x00, 0x01};
-    public final static byte[] MAX = new byte[]{(byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
+    public final static byte[] MAX = new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
     public final static byte[] ONE = new byte[]{0x00, 0x00, 0x00, 0x01};
 
     public final static short ID_SIZE = 4;
