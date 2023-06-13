@@ -1,6 +1,5 @@
 package nl.ru.sec_protocol.group5;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import javacard.framework.APDU;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
