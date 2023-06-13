@@ -62,7 +62,7 @@ public class PosCard extends Applet implements ISO7816 {
         terminalExpirationDate = JCSystem.makeTransientByteArray((short) Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
-        currentDate = JCSystem.makeTransientByteArray(Constants.DATE_TIME_SIZE, JCSystem.CLEAR_ON_RESET);
+        currentDate = JCSystem.makeTransientByteArray(Constants.EPOCH_SIZE, JCSystem.CLEAR_ON_RESET);
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);
