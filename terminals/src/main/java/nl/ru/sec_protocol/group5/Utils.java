@@ -14,6 +14,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -24,6 +25,7 @@ public class Utils {
     public final static int COUNTER_SIZE = 4;
     public final static int AMOUNT_SIZE = 4;
     public final static int DATE_SIZE = 3;
+    public final static int DATE_TIME_SIZE = 5;
     public final static int KEY_SIZE = 256;
     public final static int SIGNATURE_SIZE = KEY_SIZE;
 
@@ -90,6 +92,16 @@ public class Utils {
         return new byte[]{day, month, year};
     }
 
+    public static byte[] dateTimeToBytes(LocalDateTime date) {
+        byte minute = (byte) date.getMinute();
+        byte hour = (byte) date.getHour();
+        byte day = (byte) date.getDayOfMonth();
+        byte month = (byte) date.getMonth().getValue();
+        byte year = (byte) (date.getYear() - 2000);
+
+        return new byte[]{minute, hour, day, month, year};
+    }
+
     /**
      * Converts the given int into a byte array of length 4.
      *
@@ -140,6 +152,18 @@ public class Utils {
      */
     public static LocalDate bytesToDate(byte[] date, int offset) {
         return LocalDate.of(date[offset + 2] + 2000, date[offset + 1], date[offset]);
+    }
+
+    /**
+     * Inverts the function {@link #dateTimeToBytes(LocalDateTime)} function
+     *
+     * @param date date represented as byte array of length 3
+     * @param offset offset of there in the array the date starts
+     * @return date recovered from the byte array
+     * @author Bart Veldman
+     */
+    public static LocalDateTime bytesToDateTime(byte[] date, int offset) {
+        return LocalDateTime.of(date[offset + 4] + 2000, date[offset + 3], date[offset + 2], date[offset + 1], date[offset]);
     }
 
 
@@ -254,7 +278,7 @@ public class Utils {
      * @return true if the signature is valid, false otherwise
      * @author Bart Veldman
      */
-    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, LocalDate timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, LocalDateTime timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sigObject = Signature.getInstance("SHA1withRSA");
         sigObject.initVerify(cardPubKey);
 
@@ -262,7 +286,7 @@ public class Utils {
         sigObject.update(Utils.intToBytes(cardCounter));
         sigObject.update(Utils.intToBytes(amount));
         sigObject.update(Utils.intToBytes(cardId));
-        sigObject.update(Utils.dateToBytes(timeStamp));
+        sigObject.update(Utils.dateTimeToBytes(timeStamp));
 
         return sigObject.verify(signature);
     }

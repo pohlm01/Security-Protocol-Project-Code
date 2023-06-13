@@ -7,6 +7,7 @@ public class Constants {
     public final static short ID_SIZE = 4;
     public final static short COUNTER_SIZE = 4;
     public final static short DATE_SIZE = 3;
+    public final static short DATE_TIME_SIZE = 5;
     public final static short KEY_SIZE = 256;
     public final static short SIGNATURE_SIZE = KEY_SIZE;
 
