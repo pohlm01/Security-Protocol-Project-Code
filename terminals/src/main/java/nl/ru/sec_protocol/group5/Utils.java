@@ -14,7 +14,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -25,7 +24,7 @@ public class Utils {
     public final static int COUNTER_SIZE = 4;
     public final static int AMOUNT_SIZE = 4;
     public final static int DATE_SIZE = 3;
-    public final static int DATE_TIME_SIZE = 5;
+    public final static int EPOCH_SIZE = 4;
     public final static int KEY_SIZE = 256;
     public final static int SIGNATURE_SIZE = KEY_SIZE;
 
@@ -90,31 +89,6 @@ public class Utils {
         byte year = (byte) (date.getYear() - 2000);
 
         return new byte[]{day, month, year};
-    }
-
-    /**
-     * Converts the given time stamp into some internal byte representation.
-     * <p>
-     * We use the following representation:
-     * <ul>
-     *  <li>First byte: minute</li>
-     *  <li>Second byte: hour</li>
-     *  <li>Third byte: day</li>
-     *  <li>Fourth byte: month</li>
-     *  <li>Fifth byte: current year - 2000</li>
-     * </ul>
-     *
-     * @param date date to convert
-     * @author Bart Veldman
-     */
-    public static byte[] dateTimeToBytes(LocalDateTime date) {
-        byte minute = (byte) date.getMinute();
-        byte hour = (byte) date.getHour();
-        byte day = (byte) date.getDayOfMonth();
-        byte month = (byte) date.getMonth().getValue();
-        byte year = (byte) (date.getYear() - 2000);
-
-        return new byte[]{minute, hour, day, month, year};
     }
 
     /**
@@ -280,7 +254,7 @@ public class Utils {
      * @return true if the signature is valid, false otherwise
      * @author Bart Veldman
      */
-    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, LocalDateTime timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, int timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sigObject = Signature.getInstance("SHA1withRSA");
         sigObject.initVerify(cardPubKey);
 
@@ -288,7 +262,7 @@ public class Utils {
         sigObject.update(Utils.intToBytes(cardCounter));
         sigObject.update(Utils.intToBytes(amount));
         sigObject.update(Utils.intToBytes(cardId));
-        sigObject.update(Utils.dateTimeToBytes(timeStamp));
+        sigObject.update(Utils.intToBytes(timeStamp));
 
         return sigObject.verify(signature);
     }

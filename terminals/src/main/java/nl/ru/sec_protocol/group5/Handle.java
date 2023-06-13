@@ -12,7 +12,7 @@ import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
 import static nl.ru.sec_protocol.group5.Utils.SIGNATURE_SIZE;
@@ -36,7 +36,7 @@ public abstract class Handle {
     protected RSAPublicKey cardPubKey;
 
 
-    LocalDateTime timeStamp;
+    protected int timeStamp;
     protected final Terminal terminal;
 
     public Handle(Terminal terminal) {
@@ -83,8 +83,8 @@ public abstract class Handle {
         System.arraycopy(Utils.intToBytes(terminal.id), 0, dataToSend, 0, ID_SIZE);
         System.arraycopy(Utils.dateToBytes(terminal.expirationDate), 0, dataToSend, ID_SIZE, DATE_SIZE);
         System.arraycopy(Utils.intToBytes(terminal.counter), 0, dataToSend, ID_SIZE + DATE_SIZE, 4);
-        timeStamp = LocalDateTime.now();
-        System.arraycopy(Utils.dateTimeToBytes(timeStamp), 0, dataToSend, ID_SIZE + DATE_SIZE + 4, DATE_TIME_SIZE);
+        timeStamp = (int) (new Date().getTime()/1000);
+        System.arraycopy(Utils.intToBytes(timeStamp), 0, dataToSend, ID_SIZE + DATE_SIZE + 4, EPOCH_SIZE);
 
         var apdu = new CommandAPDU((byte) 0x00, SEND_ID_DATE_COUNTER_APDU_INS, (byte) 0x00, (byte) 0x00, dataToSend);
         System.out.printf("sending terminalId, expirationDate, counter, and timestamp: %s\n", apdu);
