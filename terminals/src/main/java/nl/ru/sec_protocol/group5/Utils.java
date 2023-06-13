@@ -92,6 +92,21 @@ public class Utils {
         return new byte[]{day, month, year};
     }
 
+    /**
+     * Converts the given time stamp into some internal byte representation.
+     * <p>
+     * We use the following representation:
+     * <ul>
+     *  <li>First byte: minute</li>
+     *  <li>Second byte: hour</li>
+     *  <li>Third byte: day</li>
+     *  <li>Fourth byte: month</li>
+     *  <li>Fifth byte: current year - 2000</li>
+     * </ul>
+     *
+     * @param date date to convert
+     * @author Bart Veldman
+     */
     public static byte[] dateTimeToBytes(LocalDateTime date) {
         byte minute = (byte) date.getMinute();
         byte hour = (byte) date.getHour();
@@ -153,19 +168,6 @@ public class Utils {
     public static LocalDate bytesToDate(byte[] date, int offset) {
         return LocalDate.of(date[offset + 2] + 2000, date[offset + 1], date[offset]);
     }
-
-    /**
-     * Inverts the function {@link #dateTimeToBytes(LocalDateTime)} function
-     *
-     * @param date date represented as byte array of length 3
-     * @param offset offset of there in the array the date starts
-     * @return date recovered from the byte array
-     * @author Bart Veldman
-     */
-    public static LocalDateTime bytesToDateTime(byte[] date, int offset) {
-        return LocalDateTime.of(date[offset + 4] + 2000, date[offset + 3], date[offset + 2], date[offset + 1], date[offset]);
-    }
-
 
     /**
      * Inverts the function {@link #intToBytes(int)} function
