@@ -31,7 +31,7 @@ public class Init {
 
         // Step 13
         applet.cardSignature[0] = buffer[ISO7816.OFFSET_P1];
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardSignature, (short) 1, (short) (255));
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
         applet.initialized = true;
     }
 
@@ -49,8 +49,8 @@ public class Init {
         byte[] buffer = apdu.getBuffer();
 
         // Step 8
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardId, (short) 0, (short) 4);
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + 4), applet.cardExpirationDate, (short) 0, (short) 3);
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardId, (short) 0, (short) Constants.ID_SIZE);
+        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE), applet.cardExpirationTimestamp, (short) 0, (short) Constants.EPOCH_SIZE);
     }
 
     /**

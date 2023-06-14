@@ -31,23 +31,23 @@ public class MutualAuth {
         applet.cardCounter += 1;
 
         // save terminal metadata
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE));
+        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE));
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalId, (short) 0, Constants.ID_SIZE);
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE), applet.terminalExpirationDate, (short) 0, Constants.DATE_SIZE);
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE), applet.terminalCounter, (short) 0, Constants.COUNTER_SIZE);
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.currentDate, (short) 0, Constants.EPOCH_SIZE);
+        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE), applet.terminalExpirationTimestamp, (short) 0, Constants.EPOCH_SIZE);
+        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.EPOCH_SIZE), applet.terminalCounter, (short) 0, Constants.COUNTER_SIZE);
+        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE), applet.currentTimestamp, (short) 0, Constants.EPOCH_SIZE);
 
         // If the terminal is expired
-        if (expired(applet.terminalExpirationDate)) {
+        if (Utils.bitArrayCompare(applet.currentTimestamp, (short) 0, applet.terminalExpirationTimestamp, (short) 0, Constants.EPOCH_SIZE) > 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
         // send card metadata
         Util.arrayCopy(applet.cardId, (short) 0, buffer, (short) 0, Constants.ID_SIZE);
-        Util.arrayCopy(applet.cardExpirationDate, (short) 0, buffer, (short) Constants.ID_SIZE, Constants.DATE_SIZE);
-        Utils.counterAsBytes(applet.cardCounter, buffer, (short) (Constants.ID_SIZE + Constants.DATE_SIZE));
+        Util.arrayCopy(applet.cardExpirationTimestamp, (short) 0, buffer, (short) Constants.ID_SIZE, Constants.EPOCH_SIZE);
+        Utils.counterAsBytes(applet.cardCounter, buffer, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE));
 
-        apdu.setOutgoingAndSend((short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE));
+        apdu.setOutgoingAndSend((short) 0, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE));
 
         applet.state[0] = Constants.TERMINAL_META_EXCHANGED;
     }
@@ -146,44 +146,21 @@ public class MutualAuth {
 
         // card ID || card expiration date || card counter
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
-        Util.arrayCopy(applet.cardExpirationDate, (short) 0, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE), Constants.DATE_SIZE);
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.DATE_SIZE));
-        applet.utils.verifySignature(applet.transientData, Constants.OFFSET_PUB_KEY, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
+        Util.arrayCopy(applet.cardExpirationTimestamp, (short) 0, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE), Constants.EPOCH_SIZE);
+        Utils.counterAsBytes(applet.cardCounter, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.EPOCH_SIZE));
+        applet.utils.verifySignature(applet.transientData, Constants.OFFSET_PUB_KEY, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
-        if (expired(applet.cardExpirationDate)) {
+        if (Utils.bitArrayCompare(applet.currentTimestamp, (short) 0, applet.cardExpirationTimestamp, (short) 0, Constants.EPOCH_SIZE) > 0) {
             applet.blocked = true;
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
 
         // terminalId || terminal expirationDate || terminal counter
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
-        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), buffer, (short) 0, applet.cardPrivKey);
+        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE), buffer, (short) 0, applet.cardPrivKey);
 
         applet.state[0] = Constants.TERMINAL_ACTIVELY_AUTHENTICATED;
 
         apdu.setOutgoingAndSend((short) 0, (short) Constants.SIGNATURE_SIZE);
     }
-
-    /**
-     * @param date date, represented as <code>byte[]</code>, to check whether it is after the current Date
-     * @return true if date > currentDate
-     * @author Maximilian Pohl
-     */
-    private boolean expired(byte[] date) {
-        // year
-        if (applet.currentDate[2] < date[2]) {
-            return false;
-        } else if (applet.currentDate[2] > date[2]) {
-            return true;
-        }
-        // month
-        if (applet.currentDate[1] < date[1]) {
-            return false;
-        } else if (applet.currentDate[1] > date[1]) {
-            return true;
-        }
-        // day
-        return applet.currentDate[0] >= date[0];
-    }
-
 }

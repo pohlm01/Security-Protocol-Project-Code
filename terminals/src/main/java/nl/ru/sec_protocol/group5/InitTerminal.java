@@ -6,12 +6,18 @@ import javax.smartcardio.CommandAPDU;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Scanner;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
@@ -41,14 +47,14 @@ public class InitTerminal extends Terminal {
      * @param expirationDate to be signed
      * @author Maximilian Pohl
      */
-    private void signCard(CardChannel channel, RSAPrivateKey backendPrivKey, RSAPublicKey cardPublicKey, int cardId, LocalDate expirationDate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
+    private void signCard(CardChannel channel, RSAPrivateKey backendPrivKey, RSAPublicKey cardPublicKey, int cardId, OffsetDateTime expirationDate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // cardId || expirationDate || K_c || 0x01
-        var data = new byte[ID_SIZE + DATE_SIZE + KEY_SIZE + 1];
+        var data = new byte[ID_SIZE + EPOCH_SIZE + KEY_SIZE + 1];
 
         System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, ID_SIZE);
-        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, DATE_SIZE);
-        System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + DATE_SIZE, KEY_SIZE);
-        data[ID_SIZE + DATE_SIZE + SIGNATURE_SIZE] = 0x01;
+        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, EPOCH_SIZE);
+        System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + EPOCH_SIZE, KEY_SIZE);
+        data[ID_SIZE + EPOCH_SIZE + SIGNATURE_SIZE] = 0x01;
 
         var signature = Utils.sign(data, backendPrivKey);
 
@@ -89,10 +95,10 @@ public class InitTerminal extends Terminal {
         return (RSAPublicKey) factory.generatePublic(publicSpec);
     }
 
-    private void sendCardIdAndExpirationDate(CardChannel channel, int cardId, LocalDate expirationDate) throws CardException {
-        var data = new byte[ID_SIZE + DATE_SIZE];
+    private void sendCardIdAndExpirationDate(CardChannel channel, int cardId, OffsetDateTime expirationDate) throws CardException {
+        var data = new byte[ID_SIZE + EPOCH_SIZE];
         System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, ID_SIZE);
-        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, DATE_SIZE);
+        System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, EPOCH_SIZE);
 
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x04, (byte) 0x00, (byte) 0x00, data);
         var response = channel.transmit(apdu);
@@ -114,12 +120,12 @@ public class InitTerminal extends Terminal {
 
         System.out.println("When should the card expire (yyyy-mm-dd)? (or press Enter to use default)");
         input = scanner.nextLine();
-        LocalDate expirationDate;
+        OffsetDateTime expirationDate;
         if (input.isEmpty()) {
-            expirationDate = LocalDate.parse("2033-10-10");
+            expirationDate = OffsetDateTime.of(LocalDate.parse("2033-10-10"), LocalTime.MIDNIGHT, ZoneOffset.UTC);
             System.out.printf("Using default expiration date '%s'\n", expirationDate);
         } else {
-            expirationDate = LocalDate.parse(input);
+            expirationDate = OffsetDateTime.of(LocalDate.parse(input), LocalTime.MIDNIGHT, ZoneOffset.UTC);
         }
 
 

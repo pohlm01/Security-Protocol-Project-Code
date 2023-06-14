@@ -9,15 +9,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public class PosTerminal extends Terminal {
 
-    public PosTerminal(int terminalId, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public PosTerminal(int terminalId, OffsetDateTime expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         super(new File("pos_public.pem"), new File("pos_private.pem"), new File("pos_signature"), terminalId, expirationDate);
     }
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
-        PosTerminal posTerminal = new PosTerminal(2345, LocalDate.of(2023, 7, 1));
+        PosTerminal posTerminal = new PosTerminal(2345, OffsetDateTime.of(LocalDate.of(2023, 7, 1), LocalTime.MIDNIGHT, ZoneOffset.UTC));
         posTerminal.start();
     }
 

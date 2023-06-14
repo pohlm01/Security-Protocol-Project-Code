@@ -1,37 +1,19 @@
 package nl.ru.sec_protocol.group5;
 
 import javacard.framework.*;
-import javacard.security.*;
+import javacard.security.Signature;
 
 public class PosCard extends Applet implements ISO7816 {
-    /////////// Persistent part /////////
-    protected byte[] balance;
-    protected final byte[] cardId;
-    protected final byte[] cardExpirationDate; // [day, month, year(three last digits, using 2000 as base year)]
-    protected final byte[] cardSignature;
-
-    protected short cardCounter;
-
-    protected javacard.security.RSAPrivateKey cardPrivKey;
-    protected javacard.security.RSAPublicKey cardPubKey;
-    protected javacard.security.RSAPublicKey backendPubKey;
-    protected boolean blocked;
-    protected boolean initialized;
-
-
     /////////  Transient part ////////////
     protected final byte[] state;
-
     protected final byte[] transientData;
-
     protected final Object[] terminalPubKey;
     protected final byte[] terminalId;
     protected final byte[] terminalCounter;
     protected final byte[] terminalType;
-    protected final byte[] terminalExpirationDate;
+    protected final byte[] terminalExpirationTimestamp;
     protected final byte[] terminalSignature;
-
-    protected final byte[] currentDate;
+    protected final byte[] currentTimestamp;
 
     ////////// Helper objects ///////////
     private final Init init;
@@ -42,27 +24,39 @@ public class PosCard extends Applet implements ISO7816 {
     final Utils utils;
     final Signature signatureInstance;
 
+    /////////// Persistent part /////////
+    protected byte[] balance;
+    protected short cardCounter;
+    protected javacard.security.RSAPrivateKey cardPrivKey;
+    protected javacard.security.RSAPublicKey cardPubKey;
+    protected javacard.security.RSAPublicKey backendPubKey;
+    protected boolean blocked;
+    protected boolean initialized;
+    protected final byte[] cardId;
+    protected final byte[] cardExpirationTimestamp; // UNIX epoch TS
+    protected final byte[] cardSignature;
+
     PosCard() {
         balance = new byte[]{0x00, 0x00, 0x00, 0x00};
         cardId = new byte[4];
-        cardExpirationDate = new byte[3];
-        cardSignature = new byte[2048 / 8];
+        cardExpirationTimestamp = new byte[Constants.EPOCH_SIZE];
+        cardSignature = new byte[Constants.SIGNATURE_SIZE];
         blocked = false;
         initialized = false;
 
         cardCounter = 0;
 
         state = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        transientData = JCSystem.makeTransientByteArray((short) (Constants.ID_SIZE + Constants.DATE_SIZE + 1 + Constants.KEY_SIZE), JCSystem.CLEAR_ON_RESET);
+        transientData = JCSystem.makeTransientByteArray((short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + 1 + Constants.KEY_SIZE), JCSystem.CLEAR_ON_RESET);
 
         terminalPubKey = JCSystem.makeTransientObjectArray((short) 1, JCSystem.CLEAR_ON_RESET);
         terminalId = JCSystem.makeTransientByteArray(Constants.ID_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalCounter = JCSystem.makeTransientByteArray(Constants.COUNTER_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalType = JCSystem.makeTransientByteArray((short) 1, JCSystem.CLEAR_ON_RESET);
-        terminalExpirationDate = JCSystem.makeTransientByteArray((short) Constants.DATE_SIZE, JCSystem.CLEAR_ON_RESET);
+        terminalExpirationTimestamp = JCSystem.makeTransientByteArray((short) Constants.EPOCH_SIZE, JCSystem.CLEAR_ON_RESET);
         terminalSignature = JCSystem.makeTransientByteArray(Constants.SIGNATURE_SIZE, JCSystem.CLEAR_ON_RESET);
 
-        currentDate = JCSystem.makeTransientByteArray(Constants.EPOCH_SIZE, JCSystem.CLEAR_ON_RESET);
+        currentTimestamp = JCSystem.makeTransientByteArray(Constants.EPOCH_SIZE, JCSystem.CLEAR_ON_RESET);
 
         init = new Init(this);
         mutualAuth = new MutualAuth(this);

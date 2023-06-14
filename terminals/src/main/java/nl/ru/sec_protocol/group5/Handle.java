@@ -11,11 +11,10 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
-import static nl.ru.sec_protocol.group5.Utils.SIGNATURE_SIZE;
 
 public abstract class Handle {
     protected final static byte SEND_ID_DATE_COUNTER_APDU_INS = 0x20;
@@ -30,14 +29,14 @@ public abstract class Handle {
 
     protected final static byte TERMINAL_TYPE_POS = 0x02;
     protected final static byte TERMINAL_TYPE_RELOAD = 0x03;
+
+    protected final Terminal terminal;
+
     protected int cardId;
     protected int cardCounter;
-    protected LocalDate cardExpirationDate;
+    protected OffsetDateTime cardExpirationDate;
     protected RSAPublicKey cardPubKey;
-
-
     protected int timeStamp;
-    protected final Terminal terminal;
 
     public Handle(Terminal terminal) {
         this.terminal = terminal;
@@ -77,14 +76,14 @@ public abstract class Handle {
      */
     private void exchangeMetadata(CardChannel channel) throws CardException {
         // Step 3
-        var dataToSend = new byte[ID_SIZE + DATE_SIZE + COUNTER_SIZE + DATE_SIZE];
+        var dataToSend = new byte[ID_SIZE + EPOCH_SIZE + COUNTER_SIZE + EPOCH_SIZE];
 
         // send terminalId || expirationDate || counter || timestamp
         System.arraycopy(Utils.intToBytes(terminal.id), 0, dataToSend, 0, ID_SIZE);
-        System.arraycopy(Utils.dateToBytes(terminal.expirationDate), 0, dataToSend, ID_SIZE, DATE_SIZE);
-        System.arraycopy(Utils.intToBytes(terminal.counter), 0, dataToSend, ID_SIZE + DATE_SIZE, 4);
-        timeStamp = (int) (new Date().getTime()/1000);
-        System.arraycopy(Utils.intToBytes(timeStamp), 0, dataToSend, ID_SIZE + DATE_SIZE + 4, EPOCH_SIZE);
+        System.arraycopy(Utils.dateToBytes(terminal.expirationDate), 0, dataToSend, ID_SIZE, EPOCH_SIZE);
+        System.arraycopy(Utils.intToBytes(terminal.counter), 0, dataToSend, ID_SIZE + EPOCH_SIZE, 4);
+        timeStamp = (int) (new Date().getTime() / 1000);
+        System.arraycopy(Utils.intToBytes(timeStamp), 0, dataToSend, ID_SIZE + EPOCH_SIZE + 4, EPOCH_SIZE);
 
         var apdu = new CommandAPDU((byte) 0x00, SEND_ID_DATE_COUNTER_APDU_INS, (byte) 0x00, (byte) 0x00, dataToSend);
         System.out.printf("sending terminalId, expirationDate, counter, and timestamp: %s\n", apdu);
@@ -100,7 +99,7 @@ public abstract class Handle {
         cardExpirationDate = bytesToDate(cardMetaData, ID_SIZE);
 
         // extract the counter
-        cardCounter = Utils.bytesToInt(cardMetaData, ID_SIZE + DATE_SIZE);
+        cardCounter = Utils.bytesToInt(cardMetaData, ID_SIZE + EPOCH_SIZE);
     }
 
 
@@ -162,21 +161,21 @@ public abstract class Handle {
      */
     private boolean verifyCardMetadata(byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidKeyException, SignatureException {
         // verify that the card is not expired yet
-        if (cardExpirationDate.isBefore(LocalDate.now())) {
+        if (cardExpirationDate.isBefore(OffsetDateTime.now())) {
             System.out.println("Card has already expired");
             return false;
         }
 
-        var metadata = new byte[ID_SIZE + DATE_SIZE];
+        var metadata = new byte[ID_SIZE + EPOCH_SIZE];
         System.arraycopy(Utils.intToBytes(cardId), 0, metadata, 0, ID_SIZE);
-        System.arraycopy(Utils.dateToBytes(cardExpirationDate), 0, metadata, ID_SIZE, DATE_SIZE);
+        System.arraycopy(Utils.dateToBytes(cardExpirationDate), 0, metadata, ID_SIZE, EPOCH_SIZE);
 
         var card_modulus = cardPubKey.getModulus().toByteArray();
 
         Signature sig_object = Signature.getInstance("SHA1withRSA");
         sig_object.initVerify(Utils.readPublicKey(new File("backend_public.pem")));
 
-        sig_object.update(metadata, 0, ID_SIZE + DATE_SIZE);
+        sig_object.update(metadata, 0, ID_SIZE + EPOCH_SIZE);
         sig_object.update(card_modulus, 1, SIGNATURE_SIZE);
         sig_object.update((byte) 0x01);
 
@@ -199,10 +198,10 @@ public abstract class Handle {
     private void activeAuthentication(CardChannel channel) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
         // Sign counters and terminal/card IDs to achieve an actively authenticated status
         // cardID || card expiration date || card counter
-        var dataToSign = new byte[COUNTER_SIZE + ID_SIZE + DATE_SIZE];
+        var dataToSign = new byte[COUNTER_SIZE + ID_SIZE + EPOCH_SIZE];
         System.arraycopy(Utils.intToBytes(cardId), 0, dataToSign, 0, ID_SIZE);
-        System.arraycopy(Utils.dateToBytes(cardExpirationDate), 0, dataToSign, ID_SIZE, DATE_SIZE);
-        System.arraycopy(Utils.intToBytes(cardCounter), 0, dataToSign, ID_SIZE + DATE_SIZE, COUNTER_SIZE);
+        System.arraycopy(Utils.dateToBytes(cardExpirationDate), 0, dataToSign, ID_SIZE, EPOCH_SIZE);
+        System.arraycopy(Utils.intToBytes(cardCounter), 0, dataToSign, ID_SIZE + EPOCH_SIZE, COUNTER_SIZE);
 
         var challenge_signature = Utils.sign(dataToSign, terminal.privKey);
 
@@ -235,11 +234,12 @@ public abstract class Handle {
 
     /**
      * checks if the card is blocked by a valid CRL and sends a signed block command if so.
+     *
      * @author Maximilian Pohl
      */
     private void checkCrl(CardChannel channel) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, CardException {
         for (var blockedCardIds : parseCrl()) {
-            if (blockedCardIds == this.cardId){
+            if (blockedCardIds == this.cardId) {
                 blockCard(channel);
                 throw new RuntimeException("Card got blocked by backend");
             }
@@ -248,11 +248,12 @@ public abstract class Handle {
 
     /**
      * sends a signed block command to the card.
+     *
      * @param channel channel to communicate with the card
      * @author Maximilian Pohl
      */
     private void blockCard(CardChannel channel) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
-        System.out.printf("Blocking card with ID %s as it is part of the CRL", this.cardId);
+        System.out.printf("Blocking card with ID %s as it is part of the CRL\n", this.cardId);
 
         cardCounter++;
 
@@ -260,13 +261,13 @@ public abstract class Handle {
         System.arraycopy(Utils.intToBytes(cardId), 0, dataToSign, 0, ID_SIZE);
         System.arraycopy(Utils.intToBytes(cardCounter), 0, dataToSign, ID_SIZE, COUNTER_SIZE);
         var signature = sign(dataToSign, terminal.privKey);
-        
+
         var apdu = new CommandAPDU((byte) 0x00, SEND_CARD_BLOCK_INS, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         System.out.printf("send block command: %s\n", apdu);
 
         var response = channel.transmit(apdu);
         System.out.printf("receive block response: %s\n", response);
-        
+
         // TODO verify signature and log the successful blocking
     }
 
