@@ -7,13 +7,14 @@ public class Constants {
 
     public final static short ID_SIZE = 4;
     public final static short COUNTER_SIZE = 4;
-    public final static short DATE_SIZE = 3;
+    public final static short EPOCH_SIZE = 4;
     public final static short KEY_SIZE = 256;
     public final static short SIGNATURE_SIZE = KEY_SIZE;
 
-    public final static short OFFSET_PUB_KEY = ID_SIZE + DATE_SIZE;
+    public final static short OFFSET_PUB_KEY = ID_SIZE + EPOCH_SIZE;
     public final static short OFFSET_DOMAIN_SEPARATOR = OFFSET_PUB_KEY + KEY_SIZE;
     public final static short AMOUNT_SIZE = 4;
+
     protected final static byte TERMINAL_TYPE_POS = 0x02;
     protected final static byte TERMINAL_TYPE_RELOAD = 0x03;
 

@@ -17,6 +17,29 @@ public class Utils {
         this.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
     }
 
+    static void counterAsBytes(short counter, byte[] buffer, short startIndex) {
+        buffer[startIndex] = 0x00;
+        buffer[(short) (startIndex + 1)] = 0x00;
+        Util.setShort(buffer, (short) (startIndex + 2), counter);
+    }
+
+    /**
+     * Compares the given arrays from their offsets for the given length in bytes bitwise.
+     *
+     * @return 0 if the arrays are identical, -1 if arrA firstly has a 0 at a place arrB has a 1; 1 otherwise.
+     * @author Maximilian Pohl
+     */
+    static short bitArrayCompare(byte[] arrA, short offA, byte[] arrB, short offB, short length) {
+        for (short i = 0; i < length; i++) {
+            if ((arrA[(short) (offA + i)] & 0x00FF) < (arrB[(short) (offB + i)] & 0x00FF)) {
+                return -1;
+            } else if ((arrA[(short) (offA + i)] & 0x00FF) > (arrB[(short) (offB + i)] & 0x00FF)) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
     void sign(byte[] data, short offset_data, short data_length, byte[] sig, short offset_sig, RSAPrivateKey key) {
         applet.signatureInstance.init(key, Signature.MODE_SIGN);
         applet.signatureInstance.sign(data, offset_data, data_length, sig, offset_sig);
@@ -157,22 +180,5 @@ public class Utils {
                         x[1] < 0 && y[1] >= (short) -x[1] ||
                         y[1] < 0 && x[1] >= (short) -y[1] ? 1 : 0));
         x[1] = (short) (x[1] + y[1]);
-    }
-
-    /**
-     * Compares the given arrays from their offsets for the given length in bytes bitwise.
-     *
-     * @return 0 if the arrays are identical, -1 if arrA firstly has a 0 at a place arrB has a 0 otherwise.
-     * @author Maximilian Pohl
-     */
-    private short bitArrayCompare(byte[] arrA, short offA, byte[] arrB, short offB, short length) {
-        for (short i = 0; i < length; i++) {
-            if ((arrA[(short) (offA + i)] & 0x00FF) < (arrB[(short) (offB + i)] & 0x00FF)) {
-                return -1;
-            } else if ((arrA[(short) (offA + i)] & 0x00FF) > (arrB[(short) (offB + i)] & 0x00FF)) {
-                return 1;
-            }
-        }
-        return 0;
     }
 }

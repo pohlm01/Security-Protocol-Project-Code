@@ -33,8 +33,8 @@ public class Reload {
 
         // create and send signature
         // terminal ID || card counter || amount || card ID || time stamp
-        Util.arrayCopy(applet.currentDate, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), Constants.DATE_SIZE);
-        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE + Constants.DATE_SIZE), buffer, (short) 0, applet.cardPrivKey);
+        Util.arrayCopy(applet.currentTimestamp, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE), Constants.EPOCH_SIZE);
+        applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE + Constants.EPOCH_SIZE), buffer, (short) 0, applet.cardPrivKey);
 
         apdu.setOutgoingAndSend((short) 0, (short) Constants.SIGNATURE_SIZE);
     }

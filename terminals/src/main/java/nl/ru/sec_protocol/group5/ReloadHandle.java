@@ -11,7 +11,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
-import static nl.ru.sec_protocol.group5.Utils.SIGNATURE_SIZE;
 
 public class ReloadHandle extends Handle {
     public ReloadHandle(ReloadTerminal terminal) {
@@ -33,7 +32,7 @@ public class ReloadHandle extends Handle {
      * Signs the amount with which to increase the card's balance and sends the amount and signature to the card
      *
      * @param channel channel to communicate with the card
-     * @param amount amount to increase the card's balance with
+     * @param amount  amount to increase the card's balance with
      * @author Bart Veldman
      */
     private void communicateAmount(CardChannel channel, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
@@ -69,13 +68,13 @@ public class ReloadHandle extends Handle {
      * Signs the amount, card counter and card id and verifies successful finalization of the reload protocol
      *
      * @param channel channel to communicate with the card
-     * @param amount amount to increase the card's balance with
+     * @param amount  amount to increase the card's balance with
      * @author Bart Veldman
      */
     private void finalizeReload(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
         // pretend we log the transaction here
 
-        var data= new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
+        var data = new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
         System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, AMOUNT_SIZE);

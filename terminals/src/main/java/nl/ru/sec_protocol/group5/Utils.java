@@ -13,7 +13,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -23,7 +25,7 @@ public class Utils {
     public final static int ID_SIZE = 4;
     public final static int COUNTER_SIZE = 4;
     public final static int AMOUNT_SIZE = 4;
-    public final static int DATE_SIZE = 3;
+    public final static int EPOCH_SIZE = 4;
     public final static int KEY_SIZE = 256;
     public final static int SIGNATURE_SIZE = KEY_SIZE;
 
@@ -70,24 +72,13 @@ public class Utils {
     }
 
     /**
-     * Converts the given date into some internal byte representation.
-     * <p>
-     * We use the following representation:
-     * <ul>
-     *  <li>First byte: day</li>
-     *  <li>Second byte: month</li>
-     *  <li>Third byte: current year - 2000</li>
-     * </ul>
+     * Converts the given date into a byte array of length 4 representing the timestamp as seconds since the UNIX epoch.
      *
      * @param date date to convert
      * @author Maximilian Pohl
      */
-    public static byte[] dateToBytes(LocalDate date) {
-        byte day = (byte) date.getDayOfMonth();
-        byte month = (byte) date.getMonth().getValue();
-        byte year = (byte) (date.getYear() - 2000);
-
-        return new byte[]{day, month, year};
+    public static byte[] dateToBytes(OffsetDateTime date) {
+        return intToBytes((int) date.toEpochSecond());
     }
 
     /**
@@ -120,7 +111,7 @@ public class Utils {
      * Signs the given data with the given private RSA key using the SHA1 with RSA and PKCS#1 padding
      *
      * @param content content to sign
-     * @param key private RSA key used for signing
+     * @param key     private RSA key used for signing
      * @author Maximilian Pohl
      */
     public static byte[] sign(byte[] content, RSAPrivateKey key) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
@@ -131,22 +122,21 @@ public class Utils {
     }
 
     /**
-     * Inverts the function {@link #dateToBytes(LocalDate)} function
+     * Inverts the function {@link #dateToBytes(OffsetDateTime)} function
      *
-     * @param date date represented as byte array of length 3
+     * @param date   date as UNIX timestamp of length 4 bytes
      * @param offset offset of there in the array the date starts
      * @return date recovered from the byte array
      * @author Maximilian Pohl
      */
-    public static LocalDate bytesToDate(byte[] date, int offset) {
-        return LocalDate.of(date[offset + 2] + 2000, date[offset + 1], date[offset]);
+    public static OffsetDateTime bytesToDate(byte[] date, int offset) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochSecond(Utils.bytesToInt(date, offset)), ZoneOffset.UTC);
     }
-
 
     /**
      * Inverts the function {@link #intToBytes(int)} function
      *
-     * @param data int represented as byte array of length 4
+     * @param data   int represented as byte array of length 4
      * @param offset offset of there in the array the int starts
      * @return int recovered from the byte array
      * @author Maximilian Pohl
@@ -171,8 +161,8 @@ public class Utils {
         }
 
         try (var reader = new BufferedReader(new FileReader("CRL"))) {
-            var expirationDate = LocalDate.parse(reader.readLine());
-            if (expirationDate.isBefore(LocalDate.now())) {
+            var expirationDate = OffsetDateTime.parse(reader.readLine());
+            if (expirationDate.isBefore(OffsetDateTime.now())) {
                 System.out.println("CRL is expired");
                 System.exit(1);
             }
@@ -226,9 +216,9 @@ public class Utils {
     /**
      * generic method to verify a signature
      *
-     * @param signature byte array containing the signature
+     * @param signature  byte array containing the signature
      * @param signedData data that should have been signed
-     * @param publicKey public key corresponding to the private key the data have been signed with
+     * @param publicKey  public key corresponding to the private key the data have been signed with
      * @return true if the signature is valid, false otherwise
      * @author Maximilian Pohl
      */
@@ -244,17 +234,17 @@ public class Utils {
     /**
      * specific method to verify signature used in reload and payment protocol
      *
-     * @param signature byte array containing the signature
-     * @param termId data that should have been signed
+     * @param signature   byte array containing the signature
+     * @param termId      data that should have been signed
      * @param cardCounter public key corresponding to the private key the data have been signed with
-     * @param amount amount to be added or deducted from the card's balance
-     * @param cardId id of the card
-     * @param timeStamp time stamp set during mutual authentication
-     * @param cardPubKey public key of the card
+     * @param amount      amount to be added or deducted from the card's balance
+     * @param cardId      id of the card
+     * @param timeStamp   time stamp set during mutual authentication
+     * @param cardPubKey  public key of the card
      * @return true if the signature is valid, false otherwise
      * @author Bart Veldman
      */
-    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, LocalDate timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public static boolean verifyAmountSignature(byte[] signature, int termId, int cardCounter, int amount, int cardId, int timeStamp, RSAPublicKey cardPubKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sigObject = Signature.getInstance("SHA1withRSA");
         sigObject.initVerify(cardPubKey);
 
@@ -262,7 +252,7 @@ public class Utils {
         sigObject.update(Utils.intToBytes(cardCounter));
         sigObject.update(Utils.intToBytes(amount));
         sigObject.update(Utils.intToBytes(cardId));
-        sigObject.update(Utils.dateToBytes(timeStamp));
+        sigObject.update(Utils.intToBytes(timeStamp));
 
         return sigObject.verify(signature);
     }

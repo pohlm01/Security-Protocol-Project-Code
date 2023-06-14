@@ -14,28 +14,24 @@ import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 
 public abstract class Terminal {
-    private CardTerminal terminal;
-    final RSAPublicKey backendPubKey;
-
-
-    final int id;
-    final LocalDate expirationDate;
-    int counter = 0;
-
-    final RSAPublicKey pubKey;
-    final RSAPrivateKey privKey;
-    final byte[] signature;
-
     public static final BigInteger pubExponent = new BigInteger("65537");
     private static final byte[] aid = new byte[]{0x2D, 0x54, 0x45, 0x53, 0x54, 0x70};
     private static final CommandAPDU select_aid = new CommandAPDU((byte) 0x00, (byte) 0xA4, (byte) 0x04, (byte) 0x00, aid);
+    final RSAPublicKey backendPubKey;
+    final int id;
+    final OffsetDateTime expirationDate;
+    final RSAPublicKey pubKey;
+    final RSAPrivateKey privKey;
+    final byte[] signature;
+    int counter = 0;
+    private CardTerminal terminal;
 
 
-    Terminal(File publicKey, File privateKey, File signature, int id, LocalDate expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    Terminal(File publicKey, File privateKey, File signature, int id, OffsetDateTime expirationDate) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         try {
             Security.addProvider(new Smartcardio());
             var terminals = TerminalFactory.getInstance("PC/SC", null, Smartcardio.PROVIDER_NAME).terminals();

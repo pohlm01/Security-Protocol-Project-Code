@@ -6,8 +6,13 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Scanner;
+
+import static nl.ru.sec_protocol.group5.Utils.*;
 
 public class Backend {
 
@@ -43,10 +48,10 @@ public class Backend {
         System.out.println("What is the ID of the card that should be blocked?");
         var scanner = new Scanner(System.in);
         var cardId = scanner.nextInt();
-        var expirationDate = LocalDate.now().plusDays(10);
+        var expirationDate = OffsetDateTime.now().plusDays(10);
         var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
 
-        if (!new File("CRL").exists()){
+        if (!new File("CRL").exists()) {
             createEmptyCrl();
         }
 
@@ -76,9 +81,9 @@ public class Backend {
 
     private static void createEmptyCrl() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
-        var expirationDate = LocalDate.now().plusDays(10);
+        var expirationDate = OffsetDateTime.now().plusDays(10);
 
-        if (new File("CRL").exists()){
+        if (new File("CRL").exists()) {
             throw new RuntimeException("CRL already exists. If you want to create an empty one please delete the current CRL first");
         }
 
@@ -153,12 +158,6 @@ public class Backend {
         System.out.println("Done...\n\n");
     }
 
-    enum TerminalType {
-        None,
-        Pos,
-        Reload,
-    }
-
     /**
      * @author Maximilian Pohl
      */
@@ -184,7 +183,7 @@ public class Backend {
         System.out.println("When should the terminal signature expire (yyyy-mm-dd)?");
 
         scanner.nextLine();
-        LocalDate expirationDate = LocalDate.parse(scanner.nextLine());
+        var expirationDate = OffsetDateTime.of(LocalDate.parse(scanner.nextLine()), LocalTime.MIDNIGHT, ZoneOffset.UTC);
 
         System.out.println("Use default path for the public key?");
         System.out.println("  1. Yes (filename: `{pos/reload}_public.pem)`");
@@ -200,12 +199,12 @@ public class Backend {
         }
 
         // 4 byte terminalID || 3 byte expirationDate || 256 byte pubKeyTerminal || 1 byte distinguishingByte
-        var dataToSign = new byte[4 + 3 + 256 + 1];
+        var dataToSign = new byte[ID_SIZE + EPOCH_SIZE + KEY_SIZE + 1];
 
-        System.arraycopy(Utils.intToBytes(terminalId), 0, dataToSign, 0, 4);
-        System.arraycopy(Utils.dateToBytes(expirationDate), 0, dataToSign, 4, 3);
-        System.arraycopy(Utils.readPublicKey(new File(filename_pub)).getModulus().toByteArray(), 1, dataToSign, 7, 256);
-        dataToSign[4 + 3 + 256] = distinguishingByte == TerminalType.Pos ? (byte) 0x02 : (byte) 0x03;
+        System.arraycopy(Utils.intToBytes(terminalId), 0, dataToSign, 0, ID_SIZE);
+        System.arraycopy(Utils.dateToBytes(expirationDate), 0, dataToSign, ID_SIZE, EPOCH_SIZE);
+        System.arraycopy(Utils.readPublicKey(new File(filename_pub)).getModulus().toByteArray(), 1, dataToSign, ID_SIZE + EPOCH_SIZE, KEY_SIZE);
+        dataToSign[ID_SIZE + EPOCH_SIZE + KEY_SIZE] = distinguishingByte == TerminalType.Pos ? (byte) 0x02 : (byte) 0x03;
 
         var backendPrivKey = Utils.readPrivateKey(new File("backend_private.pem"));
         var signature = Utils.sign(dataToSign, backendPrivKey);
@@ -216,5 +215,11 @@ public class Backend {
             outputStream.write(signature);
         }
         System.out.println("Done...\n\n");
+    }
+
+    enum TerminalType {
+        None,
+        Pos,
+        Reload,
     }
 }

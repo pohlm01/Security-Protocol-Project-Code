@@ -27,7 +27,7 @@ public class PosHandle extends Handle {
 
     /**
      * Signs the amount to pay together with the card counter and card id and verifies successful finalization of the pos protocol
-     * 
+     *
      * @param channel
      * @param amount
      * @author Felix Moelder
@@ -50,7 +50,7 @@ public class PosHandle extends Handle {
         var signatureAmount = Utils.sign(data, terminal.privKey);
 
         // Step 5 send signature
-        apdu = new CommandAPDU((byte) 0x00, SEND_PAYMENT_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE-1, SIGNATURE_SIZE);
+        apdu = new CommandAPDU((byte) 0x00, SEND_PAYMENT_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         System.out.printf("send amount signature: %s\n", apdu);
 
         response = channel.transmit(apdu);
@@ -60,6 +60,7 @@ public class PosHandle extends Handle {
         var signatureVerified = verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey);
         System.out.printf("signatures verified: %s\n", signatureVerified);
 
-        //TODO log
+        // TODO log
+        System.out.printf("Successfully payed %s\n\n", amount);
     }
 }
