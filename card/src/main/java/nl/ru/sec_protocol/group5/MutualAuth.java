@@ -28,7 +28,7 @@ public class MutualAuth {
 
         byte[] buffer = apdu.getBuffer();
 
-        applet.cardCounter += 1;
+        applet.utils.incrementCounter(applet.cardCounter);
 
         // save terminal metadata
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE));
@@ -45,7 +45,7 @@ public class MutualAuth {
         // send card metadata
         Util.arrayCopy(applet.cardId, (short) 0, buffer, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(applet.cardExpirationTimestamp, (short) 0, buffer, (short) Constants.ID_SIZE, Constants.EPOCH_SIZE);
-        Utils.counterAsBytes(applet.cardCounter, buffer, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE));
+        Util.arrayCopy(applet.cardCounter, (short) 0, buffer, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE), Constants.COUNTER_SIZE);
 
         apdu.setOutgoingAndSend((short) 0, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE));
 
@@ -147,7 +147,7 @@ public class MutualAuth {
         // card ID || card expiration date || card counter
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
         Util.arrayCopy(applet.cardExpirationTimestamp, (short) 0, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE), Constants.EPOCH_SIZE);
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.EPOCH_SIZE));
+        Util.arrayCopy(applet.cardCounter, (short) 0, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.EPOCH_SIZE), Constants.COUNTER_SIZE);
         applet.utils.verifySignature(applet.transientData, Constants.OFFSET_PUB_KEY, (short) (Constants.ID_SIZE + Constants.EPOCH_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
         if (Utils.bitArrayCompare(applet.currentTimestamp, (short) 0, applet.cardExpirationTimestamp, (short) 0, Constants.EPOCH_SIZE) > 0) {

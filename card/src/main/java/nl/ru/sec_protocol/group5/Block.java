@@ -26,14 +26,14 @@ public class Block {
 
         byte[] buffer = apdu.getBuffer();
 
-        applet.cardCounter += 1;
+        applet.utils.incrementCounter(applet.cardCounter);
 
         // save terminal signature in transient memory for verification
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, (short) 0, Constants.ID_SIZE);
-        Utils.counterAsBytes(applet.cardCounter, applet.transientData, Constants.COUNTER_SIZE);
+        Util.arrayCopy(applet.cardCounter, (short) 0, applet.transientData, Constants.ID_SIZE, Constants.COUNTER_SIZE);
 
         applet.utils.verifySignature(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
