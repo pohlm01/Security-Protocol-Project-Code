@@ -29,12 +29,15 @@ public class Payment {
 
         applet.utils.verifyAmountSignature(buffer);
 
+        // Step 8 - Payment protocol
         applet.utils.byteArraySubtraction(applet.balance, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE));
 
+        // Step 9 - Payment protocol
         applet.state[0] = Constants.FINISHED;
 
         // create and send signature
         // terminal ID || card counter || amount || card id || time stamp
+        // Step 10 - Payment protocol
         Util.arrayCopy(applet.currentTimestamp, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE), Constants.EPOCH_SIZE);
         applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE + Constants.EPOCH_SIZE), buffer, (short) 0, applet.cardPrivKey);
 

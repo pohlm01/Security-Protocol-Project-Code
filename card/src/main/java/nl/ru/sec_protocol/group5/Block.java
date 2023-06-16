@@ -26,6 +26,7 @@ public class Block {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 24 - Mutual Auth
         applet.utils.incrementCounter(applet.cardCounter);
 
         // save terminal signature in transient memory for verification
@@ -37,8 +38,10 @@ public class Block {
 
         applet.utils.verifySignature(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
+        // Step 25 - Mutual Auth
         applet.blocked = true;
 
+        // Step 26 - Mutual Auth
         Util.arrayCopy(applet.terminalId, (short) 0, applet.transientData, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.ID_SIZE, Constants.ID_SIZE);
         Util.arrayCopy(applet.terminalExpirationTimestamp, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.ID_SIZE), Constants.EPOCH_SIZE);

@@ -29,7 +29,7 @@ public class Init {
 
         byte[] buffer = apdu.getBuffer();
 
-        // Step 13
+        // Step 13 - Init protocol
         applet.cardSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
         applet.initialized = true;
@@ -48,7 +48,7 @@ public class Init {
 
         byte[] buffer = apdu.getBuffer();
 
-        // Step 8
+        // Step 8 - Init protocol
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.cardId, (short) 0, (short) Constants.ID_SIZE);
         Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE), applet.cardExpirationTimestamp, (short) 0, (short) Constants.EPOCH_SIZE);
     }
@@ -67,20 +67,20 @@ public class Init {
 
         byte[] buffer = apdu.getBuffer();
 
-        // Step 4
+        // Step 4 - Init protocol
         applet.backendPubKey = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
         applet.backendPubKey.setExponent(Constants.PUBLIC_EXPONENT, (short) 0, (short) Constants.PUBLIC_EXPONENT.length);
         applet.transientData[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 1, (short) (Constants.KEY_SIZE - 1));
         applet.backendPubKey.setModulus(applet.transientData, (short) 0, Constants.KEY_SIZE);
 
-        // Step 5
+        // Step 5 - Init protocol
         KeyPair keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_2048);
         keyPair.genKeyPair();
         applet.cardPrivKey = (RSAPrivateKey) keyPair.getPrivate();
         applet.cardPubKey = (RSAPublicKey) keyPair.getPublic();
 
-        // Step 6
+        // Step 6 - Init protocol
         applet.cardPubKey.getModulus(buffer, (short) 0);
         apdu.setOutgoingAndSend((short) 0, Constants.KEY_SIZE);
     }
