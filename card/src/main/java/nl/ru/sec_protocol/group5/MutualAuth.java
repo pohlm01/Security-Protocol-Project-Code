@@ -27,14 +27,17 @@ public class MutualAuth {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 4 - Mutual Authentication Protocol
         applet.cardCounter += 1;
 
+        // Step 3 - Mutual Authentication Protocol
         // save terminal metadata
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE));
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalId, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE), applet.terminalCounter, (short) 0, Constants.COUNTER_SIZE);
         Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.currentDate, (short) 0, Constants.DATE_SIZE);
 
+        // Step 6 - Mutual Authentication Protocol
         // send card metadata
         Util.arrayCopy(applet.cardId, (short) 0, buffer, (short) 0, Constants.ID_SIZE);
         Util.arrayCopy(applet.cardExpirationDate, (short) 0, buffer, (short) Constants.ID_SIZE, Constants.DATE_SIZE);
@@ -42,6 +45,7 @@ public class MutualAuth {
 
         apdu.setOutgoingAndSend((short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE));
 
+        // Step 5 - Mutual Authentication Protocol
         applet.state[0] = Constants.TERMINAL_META_EXCHANGED;
     }
 
@@ -58,6 +62,7 @@ public class MutualAuth {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 8 - Mutual Authentication Protocol
         // save terminal pub key in transient memory for later verification
         applet.transientData[Constants.OFFSET_PUB_KEY] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + 1), (short) (Constants.KEY_SIZE - 1));
@@ -65,8 +70,10 @@ public class MutualAuth {
         // return cards pub key for later verification by the terminal
         applet.cardPubKey.getModulus(buffer, (short) 0);
 
+        // Step 9 - Mutual Authentication Protocol
         applet.state[0] = Constants.PUB_KEYS_EXCHANGED;
 
+        // Step 10 - Mutual Authentication Protocol
         apdu.setOutgoingAndSend((short) 0, Constants.KEY_SIZE);
     }
 
@@ -84,12 +91,15 @@ public class MutualAuth {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 12 - Mutual Authentication Protocol
         // save terminal signature in transient memory for verification
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
         // use param2 to decide if it is a reload or POS terminal
         byte terminalType = buffer[ISO7816.OFFSET_P2];
+
+        // Step 13 - Mutual Authentication Protocol
         applet.utils.verifyTerminalSignature(terminalType);
 
         this.applet.terminalPubKey[0] = KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_2048, false);
@@ -99,9 +109,12 @@ public class MutualAuth {
 
         // return cards signature for verification by the terminal
         Util.arrayCopy(applet.cardSignature, (short) 0, buffer, (short) 0, Constants.SIGNATURE_SIZE);
+
+        // Step 14 - Mutual Authentication Protocol
         applet.state[0] = Constants.TERMINAL_PASSIVELY_AUTHENTICATED;
         applet.terminalType[0] = terminalType;
 
+        // Step 15 - Mutual Authentication Protocol
         apdu.setOutgoingAndSend((short) 0, (short) Constants.SIGNATURE_SIZE);
     }
 
@@ -122,12 +135,14 @@ public class MutualAuth {
         this.applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
+        // Step 18 - Mutual Authentication Protocol
         // card ID || card expiration date || card counter
         Util.arrayCopy(applet.cardId, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
         Util.arrayCopy(applet.cardExpirationDate, (short) 0, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE), Constants.DATE_SIZE);
         Utils.counterAsBytes(applet.cardCounter, applet.transientData, (short) (Constants.OFFSET_PUB_KEY + Constants.COUNTER_SIZE + Constants.DATE_SIZE));
         applet.utils.verifySignature(applet.transientData, Constants.OFFSET_PUB_KEY, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
+        // Step 19 - Mutual Authentication Protocol
         if (expired()) {
             applet.blocked = true;
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
@@ -137,8 +152,10 @@ public class MutualAuth {
         Util.arrayCopy(applet.terminalCounter, (short) 0, applet.transientData, Constants.OFFSET_PUB_KEY, Constants.COUNTER_SIZE);
         applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.DATE_SIZE + Constants.COUNTER_SIZE), buffer, (short) 0, applet.cardPrivKey);
 
+        // Step 20 - Mutual Authentication Protocol
         applet.state[0] = Constants.TERMINAL_ACTIVELY_AUTHENTICATED;
 
+        // Step 21 - Mutual Authentication Protocol
         apdu.setOutgoingAndSend((short) 0, (short) Constants.SIGNATURE_SIZE);
     }
 

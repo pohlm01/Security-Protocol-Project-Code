@@ -54,12 +54,14 @@ public class Utils {
         byte[] buffer = apdu.getBuffer();
 
         // Return an error if the amount is negative
+        // Step 3 - Reload Protocol
         if (Util.arrayCompare(buffer, (short) 0, Constants.ZERO, (short) 0, (short) 4) < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
         // terminal ID || 4 bytes for counter || amount
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), (short) 4);
 
+        // Step 4 - Reload Protocol
         applet.state[0] = Constants.AMOUNT_RECEIVED;
     }
 

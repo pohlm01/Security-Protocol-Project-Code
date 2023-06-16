@@ -50,11 +50,13 @@ public class InitTerminal extends Terminal {
         System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + DATE_SIZE, KEY_SIZE);
         data[ID_SIZE + DATE_SIZE + SIGNATURE_SIZE] = 0x01;
 
+        // Step 10,11 - Personalization Protocol
         var signature = Utils.sign(data, backendPrivKey);
 
         // We are limited to send 255 bytes of data, but the signature is 256 bytes long
         // thue we create a new buffer that contains the whole signature except for the first byte.
         // This missing, fist byte is then sent as the `Param1` of the APDU and resembled later in the card.
+        // Step 12 - Personalization Protocol
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x06, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1);
         System.out.printf("signCard: %s\n", apdu);
 
@@ -67,6 +69,7 @@ public class InitTerminal extends Terminal {
      * @author Maximilian Pohl
      **/
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
+        // Step 3 - Personalization Protocol
         var pubModulus = backendPubKey.getModulus().toByteArray();
 
         // make sure we get rid of the byte indicating the sign by cutting of the first byte.
@@ -124,7 +127,10 @@ public class InitTerminal extends Terminal {
 
 
         var pubKeyCard = generateKeyMaterial(channel);
+
+        // Step 7 - Personalization Protocol
         sendCardIdAndExpirationDate(channel, cardId, expirationDate);
+
         signCard(channel, backendPrivKey, pubKeyCard, cardId, expirationDate);
 
         System.out.println("Done...\n\n");

@@ -22,9 +22,11 @@ public class ReloadHandle extends Handle {
     public void handleCard(CardChannel channel) throws CardException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         mutualAuthentication(channel, TERMINAL_TYPE_RELOAD);
 
+        // Step 1 - Reload Protocol
         var scanner = new Scanner(System.in);
         System.out.println("What amount should be added to the card's balance?");
         var amount = scanner.nextInt();
+
         communicateAmount(channel, amount);
 
         finalizeReload(channel, amount);
@@ -38,6 +40,8 @@ public class ReloadHandle extends Handle {
      * @author Bart Veldman
      */
     private void communicateAmount(CardChannel channel, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
+
+        // Step 2 - Reload Protocol
         // send amount
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, Utils.intToBytes(amount));
 
@@ -49,6 +53,8 @@ public class ReloadHandle extends Handle {
 
         // create signature
         var data = new byte[COUNTER_SIZE + 4 + ID_SIZE];
+
+        // Step 5 - Reload Protocol
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
         System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, 4);
@@ -60,6 +66,7 @@ public class ReloadHandle extends Handle {
         apdu = new CommandAPDU((byte) 0x00, SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         response = channel.transmit(apdu);
 
+        // Step 10 - Reload Protocol
         if (!verifyAmountSignature(response.getData(), amount, cardPubKey, terminal.id, cardCounter, cardId)) {
             System.out.println("An error occurred while verifying the amount");
             System.exit(1);
@@ -77,6 +84,8 @@ public class ReloadHandle extends Handle {
         // pretend we log the transaction here
 
         var data= new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
+
+        // Step 12 - Reload Protocol
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
         System.arraycopy(Utils.intToBytes(amount), 0, data, COUNTER_SIZE, AMOUNT_SIZE);
@@ -87,10 +96,13 @@ public class ReloadHandle extends Handle {
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_LOG_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1);
 
         var response = channel.transmit(apdu);
+
+        // Step 17 - Reload Protocol
         if (response.getSW() != 0x9000) {
             System.out.println("Reloading failed");
             System.exit(1);
         }
+        // Step 18 - Reload Protocol
         System.out.println("Card reload successful. Added " + amount + " to the card's balance");
     }
 }

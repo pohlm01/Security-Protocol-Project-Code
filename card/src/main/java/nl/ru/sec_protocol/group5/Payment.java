@@ -28,12 +28,16 @@ public class Payment {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 6,7 - POS Protocol
         applet.utils.verifyAmountSignature(buffer);
 
+        // Step 8 - POS Protocol
         applet.utils.byteArraySubtraction(applet.balance, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE));
 
+        // Step 9 - POS Protocol
         applet.state[0] = Constants.FINISHED;
 
+        // Step 10 - POS Protocol
         // create and send signature
         // terminal ID || card counter || amount || card id || time stamp
         Util.arrayCopy(applet.currentDate, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE), Constants.DATE_SIZE);
