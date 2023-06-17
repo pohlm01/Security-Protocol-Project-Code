@@ -17,12 +17,6 @@ public class Utils {
         this.Y = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_RESET);
     }
 
-    static void counterAsBytes(short counter, byte[] buffer, short startIndex) {
-        buffer[startIndex] = 0x00;
-        buffer[(short) (startIndex + 1)] = 0x00;
-        Util.setShort(buffer, (short) (startIndex + 2), counter);
-    }
-
     /**
      * Compares the given arrays from their offsets for the given length in bytes bitwise.
      *
@@ -84,6 +78,7 @@ public class Utils {
         byte[] buffer = apdu.getBuffer();
 
         // Return an error if the amount is negative
+        // Step 3 - Reload and Payment protocol
         X[0] = Util.getShort(buffer, ISO7816.OFFSET_CDATA);
         if (X[0] < 0) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
@@ -91,13 +86,16 @@ public class Utils {
         // terminal ID || 4 bytes for counter || amount
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE), (short) 4);
 
+        // Step 4 - Reload and Payment protocol
         applet.state[0] = Constants.AMOUNT_RECEIVED;
     }
 
     void verifyAmountSignature(byte[] buffer) {
+        // Step 6 - Reload and Payment protocol
         incrementCounter(applet.cardCounter);
 
         // verify signature
+        // Step 7 - Reload and Payment protocol
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 

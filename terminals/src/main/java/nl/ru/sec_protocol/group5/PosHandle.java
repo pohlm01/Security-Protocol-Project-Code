@@ -19,6 +19,8 @@ public class PosHandle extends Handle {
 
     public void handleCard(CardChannel channel) throws CardException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         mutualAuthentication(channel, TERMINAL_TYPE_POS);
+
+        // Step 1 - Payment protocol
         var scanner = new Scanner(System.in);
         System.out.println("What amount should be payed?");
         var amount = scanner.nextInt();
@@ -28,19 +30,21 @@ public class PosHandle extends Handle {
     /**
      * Signs the amount to pay together with the card counter and card id and verifies successful finalization of the pos protocol
      *
-     * @param channel
-     * @param amount
+     * @param channel channel to communicate with the card
+     * @param amount amount to be paid in cents
      * @author Felix Moelder
      */
     private void communicateAmount(CardChannel channel, int amount) throws CardException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        // Step 2 send amount
+        // send amount
+        // Step 2 - Payment protocol
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, Utils.intToBytes(amount));
         System.out.printf("sending amount to pay: %s\n", apdu);
 
         var response = channel.transmit(apdu);
         System.out.printf("response: %s\n", response);
 
-        // Step 5 create signature
+        // create signature
+        // Step 5 - Payment protocol
         var data = new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
@@ -56,11 +60,17 @@ public class PosHandle extends Handle {
         response = channel.transmit(apdu);
         System.out.printf("receive amount signature: %s\n", response);
 
-        // Step 11 verify signature
+        // verify signature
+        // Step 10 + 11 - Payment protocol
         var signatureVerified = verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey);
         System.out.printf("signatures verified: %s\n", signatureVerified);
 
-        // TODO log
+        // Step 12 - Payment protocol
+        // TODO log the transaction details
+
         System.out.printf("Successfully payed %s\n\n", amount);
+
+        // Step 13 - Payment protocol
+        // TODO show success on terminal display
     }
 }

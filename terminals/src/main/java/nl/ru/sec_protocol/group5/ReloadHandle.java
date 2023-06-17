@@ -20,6 +20,7 @@ public class ReloadHandle extends Handle {
     public void handleCard(CardChannel channel) throws CardException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         mutualAuthentication(channel, TERMINAL_TYPE_RELOAD);
 
+        // Step 1 - Reload protocol
         var scanner = new Scanner(System.in);
         System.out.println("What amount should be added to the card's balance?");
         var amount = scanner.nextInt();
@@ -37,6 +38,7 @@ public class ReloadHandle extends Handle {
      */
     private void communicateAmount(CardChannel channel, int amount) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, CardException {
         // send amount
+        // Step 2 - Reload protocol
         var apdu = new CommandAPDU((byte) 0x00, SEND_AMOUNT_APDU_INS, (byte) 0x00, (byte) 0x00, Utils.intToBytes(amount));
 
         var response = channel.transmit(apdu);
@@ -46,6 +48,7 @@ public class ReloadHandle extends Handle {
         }
 
         // create signature
+        // Step 5 - Reload protocol
         var data = new byte[COUNTER_SIZE + 4 + ID_SIZE];
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
@@ -58,6 +61,7 @@ public class ReloadHandle extends Handle {
         apdu = new CommandAPDU((byte) 0x00, SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         response = channel.transmit(apdu);
 
+        // Step 9 + 10 - Reload protocol
         if (!verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey)) {
             System.out.println("An error occurred while verifying the amount");
             System.exit(1);
@@ -72,8 +76,10 @@ public class ReloadHandle extends Handle {
      * @author Bart Veldman
      */
     private void finalizeReload(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
-        // pretend we log the transaction here
+        // Step 11 - Reload protocol
+        // TODO log the transaction here
 
+        // Step 12 - Reload protocol
         var data = new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
         cardCounter += 1;
         System.arraycopy(Utils.intToBytes(cardCounter), 0, data, 0, COUNTER_SIZE);
@@ -90,5 +96,8 @@ public class ReloadHandle extends Handle {
             System.exit(1);
         }
         System.out.println("Card reload successful. Added " + amount + " to the card's balance");
+
+        // Step 18 - Reload protocol
+        // TODO show success on terminal display
     }
 }

@@ -29,10 +29,12 @@ public class Reload {
 
         applet.utils.verifyAmountSignature(buffer);
 
+        // Step 8 - Reload protocol
         applet.state[0] = Constants.RELOAD_AMOUNT_AUTHENTICATED;
 
         // create and send signature
         // terminal ID || card counter || amount || card ID || time stamp
+        // Step 9 - Reload protocol
         Util.arrayCopy(applet.currentTimestamp, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE), Constants.EPOCH_SIZE);
         applet.utils.sign(applet.transientData, (short) 0, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE + Constants.AMOUNT_SIZE + Constants.ID_SIZE + Constants.EPOCH_SIZE), buffer, (short) 0, applet.cardPrivKey);
 
@@ -53,9 +55,11 @@ public class Reload {
 
         byte[] buffer = apdu.getBuffer();
 
+        // Step 13 - Reload protocol
         applet.utils.incrementCounter(applet.cardCounter);
 
         // verify signature
+        // Step 14 - Reload protocol
         applet.terminalSignature[0] = buffer[ISO7816.OFFSET_P1];
         Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, applet.terminalSignature, (short) 1, (short) (Constants.SIGNATURE_SIZE - 1));
 
@@ -65,10 +69,10 @@ public class Reload {
         applet.utils.verifySignature(applet.transientData, Constants.ID_SIZE, (short) (Constants.COUNTER_SIZE + 4 + Constants.ID_SIZE), applet.terminalSignature, (short) 0, (RSAPublicKey) applet.terminalPubKey[0]);
 
         // increase card's balance
+        // Step 15 - Reload protocol
         applet.utils.byteArrayAddition(applet.balance, (short) 0, applet.transientData, (short) (Constants.ID_SIZE + Constants.COUNTER_SIZE));
 
+        // Step 16 - Reload protocol
         applet.state[0] = Constants.FINISHED;
-
-        apdu.setOutgoingAndSend((short) 0, (short) 0);
     }
 }
