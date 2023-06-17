@@ -56,11 +56,13 @@ public class InitTerminal extends Terminal {
         System.arraycopy(cardPublicKey.getModulus().toByteArray(), 1, data, ID_SIZE + EPOCH_SIZE, KEY_SIZE);
         data[ID_SIZE + EPOCH_SIZE + SIGNATURE_SIZE] = 0x01;
 
+        // Step 11 - Init protocol
         var signature = Utils.sign(data, backendPrivKey);
 
         // We are limited to send 255 bytes of data, but the signature is 256 bytes long
         // thue we create a new buffer that contains the whole signature except for the first byte.
         // This missing, fist byte is then sent as the `Param1` of the APDU and resembled later in the card.
+        // Step 12 - Init protocol
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x06, signature[0], (byte) 0x00, signature, 1, SIGNATURE_SIZE - 1);
         System.out.printf("signCard: %s\n", apdu);
 
@@ -75,8 +77,9 @@ public class InitTerminal extends Terminal {
     private RSAPublicKey generateKeyMaterial(CardChannel channel) throws NoSuchAlgorithmException, CardException, InvalidKeySpecException {
         var pubModulus = backendPubKey.getModulus().toByteArray();
 
-        // make sure we get rid of the byte indicating the sign by cutting of the first byte.
+        // Make sure we get rid of the byte indicating the sign by cutting of the first byte.
         // As the key is 256 byte in size, but the APDU data part can be max 255 bytes in size, the first byte goes into the param 1 of the APDU.
+        // Step 3 - Init protocol
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x02, pubModulus[1], (byte) 0x00, pubModulus, 2, KEY_SIZE - 1, KEY_SIZE);
         System.out.printf("generateKeyMaterial: %s\n", apdu);
 
@@ -88,6 +91,7 @@ public class InitTerminal extends Terminal {
             System.exit(1);
         }
 
+        // Step 6 - Init protocol
         BigInteger modulus = new BigInteger(1, response.getData(), 0, KEY_SIZE);
 
         RSAPublicKeySpec publicSpec = new RSAPublicKeySpec(modulus, pubExponent);
@@ -100,6 +104,7 @@ public class InitTerminal extends Terminal {
         System.arraycopy(Utils.intToBytes(cardId), 0, data, 0, ID_SIZE);
         System.arraycopy(Utils.dateToBytes(expirationDate), 0, data, ID_SIZE, EPOCH_SIZE);
 
+        // Step 7 - Init protocol
         var apdu = new CommandAPDU((byte) 0x00, (byte) 0x04, (byte) 0x00, (byte) 0x00, data);
         var response = channel.transmit(apdu);
         System.out.printf("sendCardIdAndExpirationDate: %s\n", response);
