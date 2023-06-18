@@ -4,6 +4,7 @@ import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -12,6 +13,7 @@ import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
+import java.util.Base64;
 import java.util.Date;
 
 import static nl.ru.sec_protocol.group5.Utils.*;
@@ -34,6 +36,8 @@ public abstract class Handle {
 
     protected int cardId;
     protected int cardCounter;
+
+    protected byte[] cardBackendSignature;
     protected OffsetDateTime cardExpirationDate;
     protected RSAPublicKey cardPubKey;
     protected int timeStamp;
@@ -151,8 +155,11 @@ public abstract class Handle {
         var response = channel.transmit(apdu);
         System.out.printf("receive card signature: %s\n", response);
 
-        // Step 15 + 16 - Mutual authentication
-        var cardPassivelyVerified = verifyCardMetadata(response.getData());
+        // Step 15 - Mutual authentication
+        cardBackendSignature = response.getData();
+
+        // Step 16 - Mutual authentication
+        var cardPassivelyVerified = verifyCardMetadata(cardBackendSignature);
         System.out.printf("card passively verified: %s\n", cardPassivelyVerified);
     }
 
@@ -281,4 +288,45 @@ public abstract class Handle {
         // TODO verify signature and log the successful blocking
     }
 
+    /**
+     * Logs the transaction details to the given filename as comma seperated CSV
+     *
+     * @param filename             file to log the details to
+     * @param amount               amount transferred in the transaction
+     * @param terminalType         terminal type. Should be either Pos or Reload.
+     * @param transactionSignature signature of the transaction produced by the card
+     * @author Maximilian Pohl
+     */
+    public void logPaymentDetails(String filename, int amount, Backend.TerminalType terminalType, byte[] transactionSignature) {
+        if (!new File(filename).isFile()) {
+            try (var outputStream = new FileOutputStream(filename, true)) {
+                outputStream.write("timestamp,cardID,cardCounter,amount,terminalType,cardPubKey,cardBackendSignature,transactionSignature\n".getBytes());
+            } catch (Exception e) {
+                System.out.println("Error writing to log file");
+                System.exit(1);
+            }
+        }
+
+        try (var outputStream = new FileOutputStream(filename, true)) {
+            outputStream.write(String.valueOf(timeStamp).getBytes());
+            outputStream.write(',');
+            outputStream.write(String.valueOf(cardId).getBytes());
+            outputStream.write(',');
+            outputStream.write(String.valueOf(cardCounter).getBytes());
+            outputStream.write(',');
+            outputStream.write(String.valueOf(amount).getBytes());
+            outputStream.write(',');
+            outputStream.write(terminalType.name().getBytes());
+            outputStream.write(',');
+            outputStream.write(Base64.getEncoder().encode(cardPubKey.getEncoded()));
+            outputStream.write(',');
+            outputStream.write(Base64.getEncoder().encode(cardBackendSignature));
+            outputStream.write(',');
+            outputStream.write(Base64.getEncoder().encode(transactionSignature));
+            outputStream.write('\n');
+        } catch (Exception e) {
+            System.out.println("Error writing to log file");
+            System.exit(1);
+        }
+    }
 }

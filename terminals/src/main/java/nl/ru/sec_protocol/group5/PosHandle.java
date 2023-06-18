@@ -60,13 +60,16 @@ public class PosHandle extends Handle {
         response = channel.transmit(apdu);
         System.out.printf("receive amount signature: %s\n", response);
 
+        // Step 10 - Payment protocol
+        var transactionSignature = response.getData();
+
         // verify signature
-        // Step 10 + 11 - Payment protocol
-        var signatureVerified = verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey);
+        // Step 11 - Payment protocol
+        var signatureVerified = verifyAmountSignature(transactionSignature, terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey);
         System.out.printf("signatures verified: %s\n", signatureVerified);
 
         // Step 12 - Payment protocol
-        // TODO log the transaction details
+        logPaymentDetails("payment_log.csv", amount, Backend.TerminalType.Pos, transactionSignature);
 
         System.out.printf("Successfully payed %s\n\n", amount);
 

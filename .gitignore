@@ -46,3 +46,4 @@ reload_private.pem
 reload_public.pem
 reload_signature
 CRL
+*.csv

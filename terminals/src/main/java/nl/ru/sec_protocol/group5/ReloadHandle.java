@@ -61,11 +61,17 @@ public class ReloadHandle extends Handle {
         apdu = new CommandAPDU((byte) 0x00, SEND_RELOAD_AMOUNT_SIGNATURE_APDU_INS, signatureAmount[0], (byte) 0x00, signatureAmount, 1, SIGNATURE_SIZE - 1, SIGNATURE_SIZE);
         response = channel.transmit(apdu);
 
-        // Step 9 + 10 - Reload protocol
-        if (!verifyAmountSignature(response.getData(), terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey)) {
+        // Step 9 - Reload protocol
+        var transactionSignature = response.getData();
+
+        // Step 10 - Reload protocol
+        if (!verifyAmountSignature(transactionSignature, terminal.id, cardCounter, amount, cardId, timeStamp, cardPubKey)) {
             System.out.println("An error occurred while verifying the amount");
             System.exit(1);
         }
+
+        // Step 11 - Reload protocol
+        logPaymentDetails("reload_log.csv", amount, Backend.TerminalType.Reload, transactionSignature);
     }
 
     /**
@@ -76,9 +82,6 @@ public class ReloadHandle extends Handle {
      * @author Bart Veldman
      */
     private void finalizeReload(CardChannel channel, int amount) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CardException {
-        // Step 11 - Reload protocol
-        // TODO log the transaction here
-
         // Step 12 - Reload protocol
         var data = new byte[COUNTER_SIZE + AMOUNT_SIZE + ID_SIZE];
         cardCounter += 1;
